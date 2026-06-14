@@ -1115,8 +1115,8 @@
   </div>
   <div class="stats-header">
     <div class="stat">
-      <div class="stat-num" id="total-libros">0</div>
-      <div class="stat-label">Total</div>
+      <div class="stat-num" id="total-leyendo">0</div>
+      <div class="stat-label">Leyendo</div>
     </div>
     <div class="stat">
       <div class="stat-num" id="total-leidos">0</div>
@@ -1225,12 +1225,23 @@
     <div class="modal-agregar-body">
 
       <!-- Paso 1: buscar -->
-      <div class="campo-busqueda-libro">
-        <input type="text" id="input-titulo-nuevo" placeholder="Título del libro..." 
-          onkeydown="if(event.key==='Enter') buscarLibroNuevo()">
-        <input type="text" id="input-autor-nuevo" placeholder="Autor (opcional)..." style="max-width:150px"
-          onkeydown="if(event.key==='Enter') buscarLibroNuevo()">
-        <button class="btn-buscar-libro" id="btn-buscar" onclick="buscarLibroNuevo()">Buscar</button>
+      <div style="margin-bottom:0.6rem">
+        <div style="display:flex;gap:0.4rem;margin-bottom:0.5rem">
+          <button id="modo-titulo-btn" onclick="cambiarModoBusqueda('titulo')" style="flex:1;padding:0.35rem;border:1.5px solid var(--amarillo);border-radius:10px;background:var(--amarillo);color:var(--cafe);font-size:0.75rem;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">Por título</button>
+          <button id="modo-isbn-btn" onclick="cambiarModoBusqueda('isbn')" style="flex:1;padding:0.35rem;border:1.5px solid var(--cafe-claro);border-radius:10px;background:transparent;color:var(--texto-suave);font-size:0.75rem;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">Por ISBN</button>
+        </div>
+        <div id="busqueda-titulo" class="campo-busqueda-libro">
+          <input type="text" id="input-titulo-nuevo" placeholder="Título del libro..." 
+            onkeydown="if(event.key==='Enter') buscarLibroNuevo()">
+          <input type="text" id="input-autor-nuevo" placeholder="Autor (opcional)..." style="max-width:150px"
+            onkeydown="if(event.key==='Enter') buscarLibroNuevo()">
+          <button class="btn-buscar-libro" id="btn-buscar" onclick="buscarLibroNuevo()">Buscar</button>
+        </div>
+        <div id="busqueda-isbn" class="campo-busqueda-libro" style="display:none">
+          <input type="text" id="input-isbn-nuevo" placeholder="ISBN (10 o 13 dígitos)..." 
+            onkeydown="if(event.key==='Enter') buscarPorISBN()">
+          <button class="btn-buscar-libro" id="btn-buscar-isbn" onclick="buscarPorISBN()">Buscar</button>
+        </div>
       </div>
 
       <!-- Resultados de búsqueda para elegir -->
@@ -1464,8 +1475,9 @@ function init() {
 
 function actualizarStats() {
   const leidos = LIBROS.filter(l => l.estado === 'Leído').length;
+  const leyendo = LIBROS.filter(l => l.estado === 'Leyendo').length;
   const pendientes = LIBROS.filter(l => l.estado === 'Quiero leer').length;
-  document.getElementById('total-libros').textContent = LIBROS.length;
+  document.getElementById('total-leyendo').textContent = leyendo;
   document.getElementById('total-leidos').textContent = leidos;
   document.getElementById('total-pendientes').textContent = pendientes;
 }
@@ -2473,6 +2485,9 @@ function abrirModalAgregar() {
 function resetModalAgregar() {
   document.getElementById('input-titulo-nuevo').value = '';
   document.getElementById('input-autor-nuevo').value = '';
+  const isbnEl = document.getElementById('input-isbn-nuevo');
+  if (isbnEl) isbnEl.value = '';
+  cambiarModoBusqueda('titulo');
   document.getElementById('resultados-busqueda').style.display = 'none';
   document.getElementById('lista-resultados').innerHTML = '';
   document.getElementById('preview-nuevo').classList.remove('visible');
@@ -2501,6 +2516,79 @@ function toggleFormatoNuevo(formato, checked) {
   if (chip) chip.classList.toggle('seleccionado', checked);
   if (checked) { if (!formatosNuevos.includes(formato)) formatosNuevos.push(formato); }
   else { formatosNuevos = formatosNuevos.filter(f => f !== formato); }
+}
+
+function cambiarModoBusqueda(modo) {
+  const esTitulo = modo === 'titulo';
+  document.getElementById('busqueda-titulo').style.display = esTitulo ? 'flex' : 'none';
+  document.getElementById('busqueda-isbn').style.display = esTitulo ? 'none' : 'flex';
+  document.getElementById('modo-titulo-btn').style.background = esTitulo ? 'var(--amarillo)' : 'transparent';
+  document.getElementById('modo-titulo-btn').style.color = esTitulo ? 'var(--cafe)' : 'var(--texto-suave)';
+  document.getElementById('modo-titulo-btn').style.borderColor = esTitulo ? 'var(--amarillo)' : 'var(--cafe-claro)';
+  document.getElementById('modo-isbn-btn').style.background = esTitulo ? 'transparent' : 'var(--amarillo)';
+  document.getElementById('modo-isbn-btn').style.color = esTitulo ? 'var(--texto-suave)' : 'var(--cafe)';
+  document.getElementById('modo-isbn-btn').style.borderColor = esTitulo ? 'var(--cafe-claro)' : 'var(--amarillo)';
+}
+
+async function buscarPorISBN() {
+  const isbn = document.getElementById('input-isbn-nuevo').value.trim().replace(/[-\s]/g, '');
+  if (!isbn || (isbn.length !== 10 && isbn.length !== 13)) {
+    mostrarToast('Ingresa un ISBN válido de 10 o 13 dígitos', true);
+    return;
+  }
+
+  const btn = document.getElementById('btn-buscar-isbn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Buscando...';
+
+  try {
+    const res = await fetch('https://openlibrary.org/isbn/' + isbn + '.json');
+    if (!res.ok) throw new Error('No encontrado');
+    const data = await res.json();
+
+    // Obtener título y páginas
+    const titulo = data.title || '';
+    const paginas = data.number_of_pages || null;
+
+    // Obtener autor
+    let autor = 'Autor desconocido';
+    if (data.authors && data.authors.length > 0) {
+      try {
+        const autorKey = data.authors[0].key;
+        const autorRes = await fetch('https://openlibrary.org' + autorKey + '.json');
+        const autorData = await autorRes.json();
+        autor = autorData.name || autor;
+      } catch {}
+    }
+
+    // Portada
+    const coverId = data.covers && data.covers[0];
+    const portadaUrl = coverId
+      ? 'https://covers.openlibrary.org/b/id/' + coverId + '-L.jpg'
+      : '';
+
+    libroNuevoTemp = { titulo, autor, paginas, portadaUrl };
+
+    // Mostrar preview directo (sin opciones — ISBN es único)
+    document.getElementById('resultados-busqueda').style.display = 'none';
+    document.getElementById('preview-titulo-nuevo').textContent = titulo;
+    document.getElementById('preview-autor-nuevo').textContent = autor;
+    document.getElementById('preview-paginas-nuevo').textContent = paginas ? paginas + ' páginas' : '';
+    const imgEl = document.getElementById('preview-img-nueva');
+    if (portadaUrl) { imgEl.src = portadaUrl; imgEl.style.display = 'block'; }
+    else { imgEl.style.display = 'none'; }
+    document.getElementById('preview-nuevo').classList.add('visible');
+    document.getElementById('btn-cancelar-wrap').style.display = 'block';
+
+    await generarResenaConClaude(titulo, autor);
+    document.getElementById('campos-extra').style.display = 'block';
+
+  } catch(e) {
+    mostrarToast('No encontré ese ISBN. Verifica el número e intenta de nuevo.', true);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Buscar';
+  }
 }
 
 async function buscarLibroNuevo() {
