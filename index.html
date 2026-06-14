@@ -714,6 +714,31 @@
   .toggle input:checked + .toggle-slider { background: var(--verde); }
   .toggle input:checked + .toggle-slider:before { transform: translateX(18px); }
   .toggle-texto { font-size: 0.8rem; color: var(--texto); font-weight: 500; }
+  /* PANEL EDICIÓN COLAPSABLE */
+  .edicion-toggle-btn {
+    width: 100%;
+    padding: 0.7rem 1rem;
+    background: var(--crema-oscuro);
+    border: 1px solid var(--cafe-claro);
+    border-radius: 10px;
+    color: var(--cafe);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.2s;
+    margin: 0.5rem 1.5rem;
+    width: calc(100% - 3rem);
+  }
+  .edicion-toggle-btn:hover { background: var(--cafe); color: var(--crema); }
+  .edicion-toggle-btn .flecha { transition: transform 0.25s; }
+  .edicion-toggle-btn.abierto .flecha { transform: rotate(180deg); }
+  .edicion-contenido { display: none; }
+  .edicion-contenido.abierto { display: block; }
+
   .toast {
     position: fixed;
     bottom: 1.5rem;
@@ -803,6 +828,18 @@
     <button class="filtro-btn" onclick="filtrarEstado('Leído', this)">✅ Leídos</button>
     <button class="filtro-btn" onclick="filtrarEstado('Leyendo', this)">📖 Leyendo</button>
     <button class="filtro-btn" onclick="filtrarEstado('Quiero leer', this)">🔖 Quiero leer</button>
+  </div>
+</div>
+
+<div class="controles" style="padding-top:0.5rem;padding-bottom:0.7rem;gap:0.4rem;">
+  <span style="font-size:0.72rem;color:var(--texto-suave);font-weight:500;text-transform:uppercase;letter-spacing:0.08em;white-space:nowrap">Formato:</span>
+  <div class="filtros">
+    <button class="filtro-btn formato-activo" onclick="filtrarFormato('todos', this)">Todos</button>
+    <button class="filtro-btn" onclick="filtrarFormato('no-tengo', this)">🚫 No lo tengo</button>
+    <button class="filtro-btn" onclick="filtrarFormato('Físico', this)">📗 Físico</button>
+    <button class="filtro-btn" onclick="filtrarFormato('EPUB', this)">📱 EPUB</button>
+    <button class="filtro-btn" onclick="filtrarFormato('PDF', this)">📄 PDF</button>
+    <button class="filtro-btn" onclick="filtrarFormato('Audiolibro', this)">🎧 Audiolibro</button>
   </div>
 </div>
 
@@ -961,6 +998,7 @@ const LIBROS = [
 // Estado
 let filtroEstado = 'todos';
 let filtroCategoria = 'Todas';
+let filtroFormato = 'todos';
 let textoBusqueda = '';
 
 // Inicializar
@@ -1005,6 +1043,14 @@ function filtrarEstado(estado, btn) {
   renderLibros();
 }
 
+function filtrarFormato(formato, btn) {
+  filtroFormato = formato;
+  // Solo desactivar botones de la fila de formato
+  btn.closest('.filtros').querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('estado-activo'));
+  btn.classList.add('estado-activo');
+  renderLibros();
+}
+
 function filtrarCat(cat, el) {
   filtroCategoria = cat;
   document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('activo'));
@@ -1019,7 +1065,13 @@ function librosFiltrados() {
     const matchBusqueda = !textoBusqueda || 
       l.titulo.toLowerCase().includes(textoBusqueda) || 
       l.autor.toLowerCase().includes(textoBusqueda);
-    return matchEstado && matchCat && matchBusqueda;
+    let matchFormato = true;
+    if (filtroFormato === 'no-tengo') {
+      matchFormato = l.loTengo === false;
+    } else if (filtroFormato !== 'todos') {
+      matchFormato = (l.formato || []).includes(filtroFormato);
+    }
+    return matchEstado && matchCat && matchBusqueda && matchFormato;
   });
 }
 
@@ -1359,68 +1411,44 @@ function panelEdicion(l) {
   if (!tokenAcceso) return '';
   
   const estados = ['Quiero leer', 'Leyendo', 'Leído'];
-  const formatos = ['Físico', 'EPUB', 'PDF', 'Físico+Digital'];
+  const formatos = ['Físico', 'EPUB', 'PDF', 'Audiolibro'];
   const cal = l.calificacion || 0;
-  const loTengo = l.loTengo !== false; // por defecto true si no está definido
+  const loTengo = l.loTengo !== false;
   const portadaActual = l.portadaUrl || '';
   
   return `
+  <button class="edicion-toggle-btn" onclick="toggleEdicion(this)">
+    <span>✏️ Editar este libro</span>
+    <span class="flecha">▼</span>
+  </button>
+  <div class="edicion-contenido">
   <div class="modal-edicion">
-    <h4>✏️ Editar este libro</h4>
 
-    <!-- Portada manual -->
-    <div class="edicion-full">
-      <label>Portada</label>
-      <div class="portada-upload-area" onclick="document.getElementById('file-portada-${l.id}').click()">
-        <input type="file" id="file-portada-${l.id}" accept="image/*" style="display:none"
-          onchange="previsualizarPortada(${l.id}, this)">
-        ${portadaActual 
-          ? `<img src="${portadaActual}" class="portada-upload-preview" id="preview-portada-${l.id}">`
-          : `<img id="preview-portada-${l.id}" class="portada-upload-preview" style="display:none">`
-        }
-        <div class="portada-upload-texto" id="texto-portada-${l.id}">
-          <strong>${portadaActual ? '🖼️ Cambiar portada' : '📷 Subir portada'}</strong>
-          ${portadaActual ? '' : 'Toca para elegir una imagen'}
-        </div>
-      </div>
-    </div>
-
-    <!-- Lo tengo + Formato -->
-    <div class="toggle-wrap">
-      <label>¿Lo tengo?</label>
-      <label class="toggle">
-        <input type="checkbox" id="edit-lotengo-${l.id}" ${loTengo ? 'checked' : ''}>
-        <span class="toggle-slider"></span>
-      </label>
-      <span class="toggle-texto" id="texto-lotengo-${l.id}">${loTengo ? 'Sí, lo tengo' : 'No lo tengo'}</span>
-    </div>
-
-    <div class="edicion-full" id="wrap-formato-${l.id}" style="${loTengo ? '' : 'display:none'}">
-      <label>Formato</label>
-      <div class="formato-chips">
-        ${formatos.map(f => {
-          const sel = (l.formato || []).includes(f);
-          return `<label class="formato-chip ${sel ? 'seleccionado' : ''}" id="chip-${l.id}-${f.replace('+','p')}">
-            <input type="checkbox" value="${f}" ${sel ? 'checked' : ''}
-              onchange="toggleFormato(${l.id}, '${f}', this.checked)">
-            ${f}
-          </label>`;
-        }).join('')}
-      </div>
-    </div>
-
-    <!-- Estado + Páginas -->
-    <div class="edicion-grid">
+    <!-- 1. Estado -->
+    <div class="edicion-grid" style="grid-template-columns:1fr">
       <div class="edicion-campo">
         <label>Estado de lectura</label>
         <select id="edit-estado-${l.id}">
-          ${estados.map(e => `<option value="${e}" ${l.estado===e?'selected':''}>${e}</option>`).join('')}
+          ${estados.map(e => \`<option value="${e}" \${l.estado===e?'selected':''}>${e}</option>\`).join('')}
         </select>
       </div>
-      <div class="edicion-campo">
-        <label>Páginas</label>
-        <input type="number" id="edit-paginas-${l.id}" value="${l.paginas||''}" placeholder="—">
-      </div>
+    </div>
+
+    <!-- 2. Calificación -->
+    <div class="estrellas-editor">
+      <label>Calificación</label>
+      ${[1,2,3,4,5].map(n => \`
+        <button class="estrella-btn \${cal >= n ? 'activa' : ''}" 
+          id="estrella-\${l.id}-\${n}"
+          onclick="setCalificacion(\${l.id}, \${n})"
+          onmouseover="previewEstrellas(\${l.id}, \${n})"
+          onmouseout="restaurarEstrellas(\${l.id})">★</button>
+      \`).join('')}
+      <span class="calificacion-valor" id="cal-val-${l.id}">${cal ? cal+'/5' : 'Sin calificar'}</span>
+    </div>
+
+    <!-- 3. Fechas -->
+    <div class="edicion-grid">
       <div class="edicion-campo">
         <label>Fecha inicio</label>
         <input type="date" id="edit-inicio-${l.id}" value="${l.fechaInicio||''}">
@@ -1431,35 +1459,77 @@ function panelEdicion(l) {
       </div>
     </div>
 
-    <!-- Calificación -->
-    <div class="estrellas-editor">
-      <label>Calificación</label>
-      ${[1,2,3,4,5].map(n => `
-        <button class="estrella-btn ${cal >= n ? 'activa' : ''}" 
-          id="estrella-${l.id}-${n}"
-          onclick="setCalificacion(${l.id}, ${n})"
-          onmouseover="previewEstrellas(${l.id}, ${n})"
-          onmouseout="restaurarEstrellas(${l.id})">★</button>
-      `).join('')}
-      <span class="calificacion-valor" id="cal-val-${l.id}">${cal ? cal+'/5' : 'Sin calificar'}</span>
+    <!-- 4. Lo tengo + Formato -->
+    <div class="toggle-wrap">
+      <label>¿Lo tengo?</label>
+      <label class="toggle">
+        <input type="checkbox" id="edit-lotengo-${l.id}" ${loTengo ? 'checked' : ''}>
+        <span class="toggle-slider"></span>
+      </label>
+      <span class="toggle-texto" id="texto-lotengo-${l.id}">${loTengo ? 'Sí, lo tengo' : 'No lo tengo'}</span>
+    </div>
+    <div class="edicion-full" id="wrap-formato-${l.id}" style="${loTengo ? '' : 'display:none'}">
+      <label>Formato</label>
+      <div class="formato-chips">
+        ${formatos.map(f => {
+          const sel = (l.formato || []).includes(f);
+          return \`<label class="formato-chip \${sel ? 'seleccionado' : ''}" id="chip-\${l.id}-\${f}">
+            <input type="checkbox" value="\${f}" \${sel ? 'checked' : ''}
+              onchange="toggleFormato(\${l.id}, '\${f}', this.checked)">
+            \${f}
+          </label>\`;
+        }).join('')}
+      </div>
     </div>
 
-    <!-- Análisis -->
+    <!-- 5. Páginas -->
+    <div class="edicion-grid" style="grid-template-columns:1fr">
+      <div class="edicion-campo">
+        <label>Páginas</label>
+        <input type="number" id="edit-paginas-${l.id}" value="${l.paginas||''}" placeholder="—">
+      </div>
+    </div>
+
+    <!-- 6. Análisis -->
     <div class="edicion-full">
       <label>Mi análisis personal</label>
       <textarea id="edit-analisis-${l.id}" placeholder="Escribe tu análisis aquí...">${l.analisis||''}</textarea>
     </div>
 
-    <!-- Frases -->
+    <!-- 7. Frases -->
     <div class="edicion-full">
       <label>Frases favoritas</label>
       <textarea id="edit-frases-${l.id}" placeholder="Escribe tus frases favoritas...">${l.frases||''}</textarea>
     </div>
 
+    <!-- 8. Portada -->
+    <div class="edicion-full">
+      <label>Portada</label>
+      <div class="portada-upload-area" onclick="document.getElementById('file-portada-\${l.id}').click()">
+        <input type="file" id="file-portada-${l.id}" accept="image/*" style="display:none"
+          onchange="previsualizarPortada(\${l.id}, this)">
+        \${portadaActual 
+          ? \`<img src="\${portadaActual}" class="portada-upload-preview" id="preview-portada-\${l.id}">\`
+          : \`<img id="preview-portada-\${l.id}" class="portada-upload-preview" style="display:none">\`
+        }
+        <div class="portada-upload-texto" id="texto-portada-\${l.id}">
+          <strong>\${portadaActual ? '🖼️ Cambiar portada' : '📷 Subir portada'}</strong>
+          \${portadaActual ? '' : 'Toca para elegir una imagen'}
+        </div>
+      </div>
+    </div>
+
     <button class="btn-guardar" id="btn-guardar-${l.id}" onclick="guardarLibro(${l.id})">
       💾 Guardar cambios
     </button>
+  </div>
   </div>`;
+}
+
+function toggleEdicion(btn) {
+  btn.classList.toggle('abierto');
+  const contenido = btn.nextElementSibling;
+  contenido.classList.toggle('abierto');
 }
 
 // Mostrar/ocultar formato según toggle "lo tengo"
@@ -1474,8 +1544,7 @@ document.addEventListener('change', e => {
 });
 
 function toggleFormato(id, formato, checked) {
-  const chipId = `chip-${id}-${formato.replace('+','p')}`;
-  const chip = document.getElementById(chipId);
+  const chip = document.getElementById(`chip-${id}-${formato}`);
   if (chip) chip.classList.toggle('seleccionado', checked);
 }
 
@@ -1553,9 +1622,9 @@ async function guardarLibro(id) {
   if (calificacionEditando !== null) l.calificacion = calificacionEditando;
 
   // Recoger formatos seleccionados
-  const formatos = ['Físico', 'EPUB', 'PDF', 'Físico+Digital'];
+  const formatos = ['Físico', 'EPUB', 'PDF', 'Audiolibro'];
   const formatosSeleccionados = formatos.filter(f => {
-    const chip = document.getElementById(`chip-${id}-${f.replace('+','p')}`);
+    const chip = document.getElementById(`chip-${id}-${f}`);
     return chip && chip.classList.contains('seleccionado');
   });
   if (formatosSeleccionados.length > 0) l.formato = formatosSeleccionados;
