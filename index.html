@@ -1932,12 +1932,13 @@ function abrirModal(id) {
           </span>
         </div>` : ''}
         ${l.calificacion ? `<div class="modal-estrellas">${renderEstrellas(l.calificacion)} ${l.calificacion}/5</div>` : ''}
+        ${l.categorias && l.categorias.length > 0 ? `<div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-top:0.4rem">${l.categorias.map(catMini).join('')}</div>` : ''}
       </div>
       <button class="modal-close" onclick="cerrarModal()">✕</button>
     </div>
     <div class="modal-body">
-      <div class="modal-section">
-        <div class="modal-cats">${l.categorias.map(catMini).join('')}</div>
+      <div class="modal-section" style="display:none">
+        <div class="modal-cats"></div>
       </div>
       ${l.resena ? `
       <div class="modal-section">
@@ -2464,12 +2465,14 @@ async function guardarLibro(id) {
   const catsSeleccionadas = todasCats.filter(cat => {
     const chipId = 'catchip-' + id + '-' + cat.replace(/[^a-zA-Z0-9]/g,'_');
     const chip = document.getElementById(chipId);
-    // Verificar tanto la clase como el input checkbox
     if (!chip) return false;
     const input = chip.querySelector('input[type="checkbox"]');
     return input ? input.checked : chip.classList.contains('seleccionado');
   });
   l.categorias = catsSeleccionadas;
+
+  // Reseña y diferencial
+  const resenaEl = document.getElementById('edit-resena-' + id);
   const diferencialEl = document.getElementById('edit-diferencial-' + id);
   if (resenaEl) l.resena = resenaEl.value;
   if (diferencialEl) l.diferencial = diferencialEl.value;
