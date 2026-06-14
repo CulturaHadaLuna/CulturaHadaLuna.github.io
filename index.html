@@ -639,7 +639,81 @@
   .btn-guardar:hover { background: var(--texto); }
   .btn-guardar:disabled { opacity: 0.6; cursor: not-allowed; }
 
-  /* TOAST */
+  /* SUBIR PORTADA */
+  .portada-upload-area {
+    border: 2px dashed var(--cafe-claro);
+    border-radius: 10px;
+    padding: 0.8rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: white;
+    margin-bottom: 0.8rem;
+    position: relative;
+  }
+  .portada-upload-area:hover { border-color: var(--amarillo); background: var(--crema); }
+  .portada-upload-area input[type="file"] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  }
+  .portada-upload-preview {
+    width: 60px; height: 80px; object-fit: cover;
+    border-radius: 6px; margin: 0 auto 0.4rem;
+    display: block; box-shadow: 0 2px 8px var(--sombra);
+  }
+  .portada-upload-texto { font-size: 0.75rem; color: var(--texto-suave); }
+  .portada-upload-texto strong { color: var(--cafe); display: block; font-size: 0.8rem; }
+
+  /* CHECKBOXES DE FORMATO */
+  .formato-chips {
+    display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.25rem;
+  }
+  .formato-chip {
+    display: flex; align-items: center; gap: 0.3rem;
+    padding: 0.3rem 0.6rem;
+    border: 1.5px solid var(--cafe-claro);
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    color: var(--texto-suave);
+    background: white;
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .formato-chip input { display: none; }
+  .formato-chip.seleccionado {
+    background: var(--cafe);
+    color: var(--crema);
+    border-color: var(--cafe);
+  }
+
+  /* TOGGLE LO TENGO */
+  .toggle-wrap {
+    display: flex; align-items: center; gap: 0.6rem;
+    margin-bottom: 0.8rem;
+  }
+  .toggle-wrap label { font-size: 0.68rem; color: var(--texto-suave); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
+  .toggle {
+    position: relative; width: 38px; height: 20px; cursor: pointer;
+  }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider {
+    position: absolute; inset: 0;
+    background: var(--cafe-claro);
+    border-radius: 20px;
+    transition: background 0.2s;
+  }
+  .toggle-slider:before {
+    content: '';
+    position: absolute;
+    width: 14px; height: 14px;
+    left: 3px; top: 3px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.2s;
+  }
+  .toggle input:checked + .toggle-slider { background: var(--verde); }
+  .toggle input:checked + .toggle-slider:before { transform: translateX(18px); }
+  .toggle-texto { font-size: 0.8rem; color: var(--texto); font-weight: 500; }
   .toast {
     position: fixed;
     bottom: 1.5rem;
@@ -986,7 +1060,14 @@ function getGoogleBooksUrl(titulo, autor) {
   return `https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=1&fields=items(volumeInfo/imageLinks)`;
 }
 
-async function cargarPortada(img, placeholder, titulo, autor) {
+async function cargarPortada(img, placeholder, titulo, autor, portadaUrl) {
+  // Si tiene portada guardada manualmente, usarla directamente
+  if (portadaUrl) {
+    img.src = portadaUrl;
+    img.onerror = () => { img.style.display = 'none'; placeholder.style.display = 'flex'; };
+    return;
+  }
+
   const cacheKey = titulo + autor;
   
   // Si ya tenemos la URL en cache
@@ -1067,7 +1148,7 @@ function renderLibros() {
   libros.forEach(l => {
     const img = document.getElementById(`img-${l.id}`);
     const ph = document.getElementById(`ph-${l.id}`);
-    if (img && ph) cargarPortada(img, ph, l.titulo, l.autor);
+    if (img && ph) cargarPortada(img, ph, l.titulo, l.autor, l.portadaUrl);
   });
 }
 
@@ -1128,7 +1209,7 @@ function abrirModal(id) {
   // Cargar portada del modal
   const mImg = document.getElementById(`modal-img-${l.id}`);
   const mPh = document.getElementById(`modal-ph-${l.id}`);
-  if (mImg && mPh) cargarPortada(mImg, mPh, l.titulo, l.autor);
+  if (mImg && mPh) cargarPortada(mImg, mPh, l.titulo, l.autor, l.portadaUrl);
 }
 
 function cerrarModal(e) {
@@ -1278,34 +1359,75 @@ function panelEdicion(l) {
   if (!tokenAcceso) return '';
   
   const estados = ['Quiero leer', 'Leyendo', 'Leído'];
+  const formatos = ['Físico', 'EPUB', 'PDF', 'Físico+Digital'];
   const cal = l.calificacion || 0;
+  const loTengo = l.loTengo !== false; // por defecto true si no está definido
+  const portadaActual = l.portadaUrl || '';
   
   return `
   <div class="modal-edicion">
     <h4>✏️ Editar este libro</h4>
-    
-    <!-- Estado -->
+
+    <!-- Portada manual -->
+    <div class="edicion-full">
+      <label>Portada</label>
+      <div class="portada-upload-area" onclick="document.getElementById('file-portada-${l.id}').click()">
+        <input type="file" id="file-portada-${l.id}" accept="image/*" style="display:none"
+          onchange="previsualizarPortada(${l.id}, this)">
+        ${portadaActual 
+          ? `<img src="${portadaActual}" class="portada-upload-preview" id="preview-portada-${l.id}">`
+          : `<img id="preview-portada-${l.id}" class="portada-upload-preview" style="display:none">`
+        }
+        <div class="portada-upload-texto" id="texto-portada-${l.id}">
+          <strong>${portadaActual ? '🖼️ Cambiar portada' : '📷 Subir portada'}</strong>
+          ${portadaActual ? '' : 'Toca para elegir una imagen'}
+        </div>
+      </div>
+    </div>
+
+    <!-- Lo tengo + Formato -->
+    <div class="toggle-wrap">
+      <label>¿Lo tengo?</label>
+      <label class="toggle">
+        <input type="checkbox" id="edit-lotengo-${l.id}" ${loTengo ? 'checked' : ''}>
+        <span class="toggle-slider"></span>
+      </label>
+      <span class="toggle-texto" id="texto-lotengo-${l.id}">${loTengo ? 'Sí, lo tengo' : 'No lo tengo'}</span>
+    </div>
+
+    <div class="edicion-full" id="wrap-formato-${l.id}" style="${loTengo ? '' : 'display:none'}">
+      <label>Formato</label>
+      <div class="formato-chips">
+        ${formatos.map(f => {
+          const sel = (l.formato || []).includes(f);
+          return `<label class="formato-chip ${sel ? 'seleccionado' : ''}" id="chip-${l.id}-${f.replace('+','p')}">
+            <input type="checkbox" value="${f}" ${sel ? 'checked' : ''}
+              onchange="toggleFormato(${l.id}, '${f}', this.checked)">
+            ${f}
+          </label>`;
+        }).join('')}
+      </div>
+    </div>
+
+    <!-- Estado + Páginas -->
     <div class="edicion-grid">
       <div class="edicion-campo">
         <label>Estado de lectura</label>
-        <select id="edit-estado-${l.id}" onchange="actualizarCampo(${l.id}, 'estado', this.value)">
+        <select id="edit-estado-${l.id}">
           ${estados.map(e => `<option value="${e}" ${l.estado===e?'selected':''}>${e}</option>`).join('')}
         </select>
       </div>
       <div class="edicion-campo">
         <label>Páginas</label>
-        <input type="number" id="edit-paginas-${l.id}" value="${l.paginas||''}" placeholder="—"
-          onchange="actualizarCampo(${l.id}, 'paginas', this.value ? parseInt(this.value) : null)">
+        <input type="number" id="edit-paginas-${l.id}" value="${l.paginas||''}" placeholder="—">
       </div>
       <div class="edicion-campo">
         <label>Fecha inicio</label>
-        <input type="date" id="edit-inicio-${l.id}" value="${l.fechaInicio||''}"
-          onchange="actualizarCampo(${l.id}, 'fechaInicio', this.value)">
+        <input type="date" id="edit-inicio-${l.id}" value="${l.fechaInicio||''}">
       </div>
       <div class="edicion-campo">
         <label>Fecha fin</label>
-        <input type="date" id="edit-fin-${l.id}" value="${l.fechaFin||''}"
-          onchange="actualizarCampo(${l.id}, 'fechaFin', this.value)">
+        <input type="date" id="edit-fin-${l.id}" value="${l.fechaFin||''}">
       </div>
     </div>
 
@@ -1338,6 +1460,39 @@ function panelEdicion(l) {
       💾 Guardar cambios
     </button>
   </div>`;
+}
+
+// Mostrar/ocultar formato según toggle "lo tengo"
+document.addEventListener('change', e => {
+  if (e.target.type === 'checkbox' && e.target.id && e.target.id.startsWith('edit-lotengo-')) {
+    const id = parseInt(e.target.id.replace('edit-lotengo-', ''));
+    const wrap = document.getElementById(`wrap-formato-${id}`);
+    const texto = document.getElementById(`texto-lotengo-${id}`);
+    if (wrap) wrap.style.display = e.target.checked ? '' : 'none';
+    if (texto) texto.textContent = e.target.checked ? 'Sí, lo tengo' : 'No lo tengo';
+  }
+});
+
+function toggleFormato(id, formato, checked) {
+  const chipId = `chip-${id}-${formato.replace('+','p')}`;
+  const chip = document.getElementById(chipId);
+  if (chip) chip.classList.toggle('seleccionado', checked);
+}
+
+// Previsualizar portada antes de guardar
+let portadaBase64 = {};
+function previsualizarPortada(id, input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    portadaBase64[id] = e.target.result; // base64
+    const preview = document.getElementById(`preview-portada-${id}`);
+    const texto = document.getElementById(`texto-portada-${id}`);
+    if (preview) { preview.src = e.target.result; preview.style.display = 'block'; }
+    if (texto) texto.innerHTML = '<strong>🖼️ Cambiar portada</strong>';
+  };
+  reader.readAsDataURL(file);
 }
 
 function previewEstrellas(id, n) {
@@ -1386,6 +1541,7 @@ async function guardarLibro(id) {
   const finEl = document.getElementById(`edit-fin-${id}`);
   const analisisEl = document.getElementById(`edit-analisis-${id}`);
   const frasesEl = document.getElementById(`edit-frases-${id}`);
+  const loTengoEl = document.getElementById(`edit-lotengo-${id}`);
 
   if (estadoEl) l.estado = estadoEl.value;
   if (paginasEl) l.paginas = paginasEl.value ? parseInt(paginasEl.value) : null;
@@ -1393,7 +1549,23 @@ async function guardarLibro(id) {
   if (finEl) l.fechaFin = finEl.value;
   if (analisisEl) l.analisis = analisisEl.value;
   if (frasesEl) l.frases = frasesEl.value;
+  if (loTengoEl) l.loTengo = loTengoEl.checked;
   if (calificacionEditando !== null) l.calificacion = calificacionEditando;
+
+  // Recoger formatos seleccionados
+  const formatos = ['Físico', 'EPUB', 'PDF', 'Físico+Digital'];
+  const formatosSeleccionados = formatos.filter(f => {
+    const chip = document.getElementById(`chip-${id}-${f.replace('+','p')}`);
+    return chip && chip.classList.contains('seleccionado');
+  });
+  if (formatosSeleccionados.length > 0) l.formato = formatosSeleccionados;
+
+  // Portada manual (base64)
+  if (portadaBase64[id]) {
+    l.portadaUrl = portadaBase64[id];
+    portadaCache[l.titulo + l.autor] = portadaBase64[id];
+    delete portadaBase64[id];
+  }
 
   const btn = document.getElementById(`btn-guardar-${id}`);
   if (btn) { btn.disabled = true; btn.textContent = '💾 Guardando...'; }
@@ -1402,7 +1574,6 @@ async function guardarLibro(id) {
     await guardarEnDrive();
     mostrarToast('✅ Cambios guardados en Drive');
     calificacionEditando = null;
-    // Refrescar la tarjeta en el grid
     actualizarStats();
     renderLibros();
   } catch(e) {
