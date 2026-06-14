@@ -1439,116 +1439,99 @@ function panelEdicion(l) {
   const cal = l.calificacion || 0;
   const loTengo = l.loTengo !== false;
   const portadaActual = l.portadaUrl || '';
+  const lid = l.id;
   
-  return `
-  <button class="edicion-toggle-btn" onclick="toggleEdicion(this)">
-    <span>✏️ Editar este libro</span>
-    <span class="flecha">▼</span>
-  </button>
-  <div class="edicion-contenido">
-  <div class="modal-edicion">
+  // Opciones de estado
+  let optsEstado = '';
+  estados.forEach(e => {
+    optsEstado += '<option value="' + e + '"' + (l.estado === e ? ' selected' : '') + '>' + e + '</option>';
+  });
 
-    <!-- 1. Estado -->
-    <div class="edicion-grid" style="grid-template-columns:1fr">
-      <div class="edicion-campo">
-        <label>Estado de lectura</label>
-        <select id="edit-estado-${l.id}">
-          ${estados.map(e => \`<option value="${e}" \${l.estado===e?'selected':''}>${e}</option>\`).join('')}
-        </select>
-      </div>
-    </div>
+  // Estrellas
+  let starsHtml = '';
+  for (let n = 1; n <= 5; n++) {
+    starsHtml += '<button class="estrella-btn' + (cal >= n ? ' activa' : '') + '" ' +
+      'id="estrella-' + lid + '-' + n + '" ' +
+      'onclick="setCalificacion(' + lid + ',' + n + ')" ' +
+      'onmouseover="previewEstrellas(' + lid + ',' + n + ')" ' +
+      'onmouseout="restaurarEstrellas(' + lid + ')">★</button>';
+  }
 
-    <!-- 2. Calificación -->
-    <div class="estrellas-editor">
-      <label>Calificación</label>
-      ${[1,2,3,4,5].map(n => \`
-        <button class="estrella-btn \${cal >= n ? 'activa' : ''}" 
-          id="estrella-\${l.id}-\${n}"
-          onclick="setCalificacion(\${l.id}, \${n})"
-          onmouseover="previewEstrellas(\${l.id}, \${n})"
-          onmouseout="restaurarEstrellas(\${l.id})">★</button>
-      \`).join('')}
-      <span class="calificacion-valor" id="cal-val-${l.id}">${cal ? cal+'/5' : 'Sin calificar'}</span>
-    </div>
+  // Formato chips
+  let chipsHtml = '';
+  formatos.forEach(f => {
+    const sel = (l.formato || []).includes(f);
+    chipsHtml += '<label class="formato-chip' + (sel ? ' seleccionado' : '') + '" id="chip-' + lid + '-' + f + '">' +
+      '<input type="checkbox" value="' + f + '"' + (sel ? ' checked' : '') + ' onchange="toggleFormato(' + lid + ',\'' + f + '\',this.checked)">' +
+      f + '</label>';
+  });
 
-    <!-- 3. Fechas -->
-    <div class="edicion-grid">
-      <div class="edicion-campo">
-        <label>Fecha inicio</label>
-        <input type="date" id="edit-inicio-${l.id}" value="${l.fechaInicio||''}">
-      </div>
-      <div class="edicion-campo">
-        <label>Fecha fin</label>
-        <input type="date" id="edit-fin-${l.id}" value="${l.fechaFin||''}">
-      </div>
-    </div>
+  // Portada
+  let portadaHtml = '';
+  if (portadaActual) {
+    portadaHtml = '<img src="' + portadaActual + '" class="portada-upload-preview" id="preview-portada-' + lid + '">';
+  } else {
+    portadaHtml = '<img id="preview-portada-' + lid + '" class="portada-upload-preview" style="display:none">';
+  }
 
-    <!-- 4. Lo tengo + Formato -->
-    <div class="toggle-wrap">
-      <label>¿Lo tengo?</label>
-      <label class="toggle">
-        <input type="checkbox" id="edit-lotengo-${l.id}" ${loTengo ? 'checked' : ''}>
-        <span class="toggle-slider"></span>
-      </label>
-      <span class="toggle-texto" id="texto-lotengo-${l.id}">${loTengo ? 'Sí, lo tengo' : 'No lo tengo'}</span>
-    </div>
-    <div class="edicion-full" id="wrap-formato-${l.id}" style="${loTengo ? '' : 'display:none'}">
-      <label>Formato</label>
-      <div class="formato-chips">
-        ${formatos.map(f => {
-          const sel = (l.formato || []).includes(f);
-          return \`<label class="formato-chip \${sel ? 'seleccionado' : ''}" id="chip-\${l.id}-\${f}">
-            <input type="checkbox" value="\${f}" \${sel ? 'checked' : ''}
-              onchange="toggleFormato(\${l.id}, '\${f}', this.checked)">
-            \${f}
-          </label>\`;
-        }).join('')}
-      </div>
-    </div>
+  return '<button class="edicion-toggle-btn" onclick="toggleEdicion(this)">' +
+    '<span>✏️ Editar este libro</span><span class="flecha">▼</span></button>' +
+    '<div class="edicion-contenido"><div class="modal-edicion">' +
 
-    <!-- 5. Páginas -->
-    <div class="edicion-grid" style="grid-template-columns:1fr">
-      <div class="edicion-campo">
-        <label>Páginas</label>
-        <input type="number" id="edit-paginas-${l.id}" value="${l.paginas||''}" placeholder="—">
-      </div>
-    </div>
+    // 1. Estado
+    '<div class="edicion-grid" style="grid-template-columns:1fr"><div class="edicion-campo">' +
+    '<label>Estado de lectura</label>' +
+    '<select id="edit-estado-' + lid + '">' + optsEstado + '</select>' +
+    '</div></div>' +
 
-    <!-- 6. Análisis -->
-    <div class="edicion-full">
-      <label>Mi análisis personal</label>
-      <textarea id="edit-analisis-${l.id}" placeholder="Escribe tu análisis aquí...">${l.analisis||''}</textarea>
-    </div>
+    // 2. Calificación
+    '<div class="estrellas-editor"><label>Calificación</label>' + starsHtml +
+    '<span class="calificacion-valor" id="cal-val-' + lid + '">' + (cal ? cal + '/5' : 'Sin calificar') + '</span></div>' +
 
-    <!-- 7. Frases -->
-    <div class="edicion-full">
-      <label>Frases favoritas</label>
-      <textarea id="edit-frases-${l.id}" placeholder="Escribe tus frases favoritas...">${l.frases||''}</textarea>
-    </div>
+    // 3. Fechas
+    '<div class="edicion-grid">' +
+    '<div class="edicion-campo"><label>Fecha inicio</label>' +
+    '<input type="date" id="edit-inicio-' + lid + '" value="' + (l.fechaInicio || '') + '"></div>' +
+    '<div class="edicion-campo"><label>Fecha fin</label>' +
+    '<input type="date" id="edit-fin-' + lid + '" value="' + (l.fechaFin || '') + '"></div>' +
+    '</div>' +
 
-    <!-- 8. Portada -->
-    <div class="edicion-full">
-      <label>Portada</label>
-      <div class="portada-upload-area" onclick="document.getElementById('file-portada-\${l.id}').click()">
-        <input type="file" id="file-portada-${l.id}" accept="image/*" style="display:none"
-          onchange="previsualizarPortada(\${l.id}, this)">
-        \${portadaActual 
-          ? \`<img src="\${portadaActual}" class="portada-upload-preview" id="preview-portada-\${l.id}">\`
-          : \`<img id="preview-portada-\${l.id}" class="portada-upload-preview" style="display:none">\`
-        }
-        <div class="portada-upload-texto" id="texto-portada-\${l.id}">
-          <strong>\${portadaActual ? '🖼️ Cambiar portada' : '📷 Subir portada'}</strong>
-          \${portadaActual ? '' : 'Toca para elegir una imagen'}
-        </div>
-      </div>
-    </div>
+    // 4. Lo tengo + Formato
+    '<div class="toggle-wrap"><label>¿Lo tengo?</label>' +
+    '<label class="toggle"><input type="checkbox" id="edit-lotengo-' + lid + '"' + (loTengo ? ' checked' : '') + '>' +
+    '<span class="toggle-slider"></span></label>' +
+    '<span class="toggle-texto" id="texto-lotengo-' + lid + '">' + (loTengo ? 'Sí, lo tengo' : 'No lo tengo') + '</span></div>' +
+    '<div class="edicion-full" id="wrap-formato-' + lid + '"' + (loTengo ? '' : ' style="display:none"') + '>' +
+    '<label>Formato</label><div class="formato-chips">' + chipsHtml + '</div></div>' +
 
-    <button class="btn-guardar" id="btn-guardar-${l.id}" onclick="guardarLibro(${l.id})">
-      💾 Guardar cambios
-    </button>
-  </div>
-  </div>`;
+    // 5. Páginas
+    '<div class="edicion-grid" style="grid-template-columns:1fr"><div class="edicion-campo">' +
+    '<label>Páginas</label>' +
+    '<input type="number" id="edit-paginas-' + lid + '" value="' + (l.paginas || '') + '" placeholder="—"></div></div>' +
+
+    // 6. Análisis
+    '<div class="edicion-full"><label>Mi análisis personal</label>' +
+    '<textarea id="edit-analisis-' + lid + '" placeholder="Escribe tu análisis aquí...">' + (l.analisis || '') + '</textarea></div>' +
+
+    // 7. Frases
+    '<div class="edicion-full"><label>Frases favoritas</label>' +
+    '<textarea id="edit-frases-' + lid + '" placeholder="Escribe tus frases favoritas...">' + (l.frases || '') + '</textarea></div>' +
+
+    // 8. Portada
+    '<div class="edicion-full"><label>Portada</label>' +
+    '<div class="portada-upload-area" onclick="document.getElementById(\'file-portada-' + lid + '\').click()">' +
+    '<input type="file" id="file-portada-' + lid + '" accept="image/*" style="display:none" onchange="previsualizarPortada(' + lid + ',this)">' +
+    portadaHtml +
+    '<div class="portada-upload-texto" id="texto-portada-' + lid + '">' +
+    '<strong>' + (portadaActual ? '🖼️ Cambiar portada' : '📷 Subir portada') + '</strong>' +
+    (portadaActual ? '' : '<br>Toca para elegir una imagen') +
+    '</div></div></div>' +
+
+    // Botón guardar
+    '<button class="btn-guardar" id="btn-guardar-' + lid + '" onclick="guardarLibro(' + lid + ')">💾 Guardar cambios</button>' +
+    '</div></div>';
 }
+
 
 function toggleEdicion(btn) {
   btn.classList.toggle('abierto');
