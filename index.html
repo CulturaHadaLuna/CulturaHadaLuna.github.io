@@ -960,7 +960,7 @@
   .lista-libros { padding: 1rem 2rem; max-width: 1400px; margin: 0 auto; }
   .lista-header {
     display: grid;
-    grid-template-columns: 44px 1fr 130px 110px 90px 90px 130px 90px 32px;
+    grid-template-columns: 44px 1.8fr 1fr 100px 80px 100px 1.2fr 90px 32px;
     gap: 0.5rem; padding: 0.3rem 0.8rem;
     border-bottom: 2px solid var(--cafe-claro); margin-bottom: 0.2rem;
   }
@@ -974,7 +974,7 @@
   .lista-header span.col-activa { color: var(--cafe); }
   .lista-fila {
     display: grid;
-    grid-template-columns: 44px 1fr 130px 110px 90px 90px 130px 90px 32px;
+    grid-template-columns: 44px 1.8fr 1fr 100px 80px 100px 1.2fr 90px 32px;
     gap: 0.5rem; padding: 0.45rem 0.8rem;
     border-bottom: 1px solid var(--crema-oscuro);
     align-items: center; cursor: pointer; border-radius: 8px;
@@ -1317,25 +1317,25 @@
 
 <script>
 const CATEGORIAS_COLORES = {
-  'Fantasy': {bg:'#7B5EA722', color:'#4A2D7A', border:'#7B5EA7'},
-  'Fiction': {bg:'#D4763B22', color:'#8B3A1A', border:'#D4763B'},
-  'Woman Power': {bg:'#C0395822', color:'#7A1A35', border:'#C03958'},
-  'Historical Fiction': {bg:'#7A9E7E22', color:'#2D5E35', border:'#7A9E7E'},
-  'Novela': {bg:'#5C7A9E22', color:'#1A3560', border:'#5C7A9E'},
-  'Cozy & Contemplative': {bg:'#E8B84B22', color:'#7A5A0A', border:'#E8B84B'},
-  'Colombia': {bg:'#E8D44B22', color:'#6B5A0A', border:'#C4A82A'},
-  'Thriller': {bg:'#2C2C2C22', color:'#1A1A1A', border:'#555'},
-  'NoFiction': {bg:'#9E7A5C22', color:'#5E3A1A', border:'#9E7A5C'},
-  'Growing': {bg:'#5C9E7A22', color:'#1A5E3A', border:'#5C9E7A'},
-  'Humor': {bg:'#FFB30022', color:'#7A5500', border:'#FFB300'},
-  'Libros sobre libros': {bg:'#9E5C7A22', color:'#5E1A3A', border:'#9E5C7A'},
-  'Mitología': {bg:'#7A5C9E22', color:'#3A1A5E', border:'#7A5C9E'},
-  'Sci-Fi': {bg:'#1A7A9E22', color:'#0A3A5E', border:'#1A7A9E'},
-  'Romance': {bg:'#E8587822', color:'#7A1A30', border:'#E85878'},
-  'Distopia': {bg:'#4A4A4A22', color:'#1A1A1A', border:'#777'},
-  'Biography': {bg:'#9E8A5C22', color:'#5E4A1A', border:'#9E8A5C'},
-  'LGBTQ+': {bg:'#E8784822', color:'#7A3010', border:'#E87848'},
-  'Lo amé': {bg:'#FF8C0022', color:'#7A3500', border:'#FF8C00'},
+  'Fantasy':              {bg:'#EEEDFE', color:'#3C3489', border:'#534AB7'},
+  'Fiction':             {bg:'#FAECE7', color:'#993C1D', border:'#D85A30'},
+  'Woman Power':         {bg:'#FBEAF0', color:'#993556', border:'#C03958'},
+  'Historical Fiction':  {bg:'#E1F5EE', color:'#0F6E56', border:'#1D9E75'},
+  'Novela':              {bg:'#E6F1FB', color:'#185FA5', border:'#378ADD'},
+  'Cozy & Contemplative':{bg:'#FAEEDA', color:'#854F0B', border:'#BA7517'},
+  'Colombia':            {bg:'#FAEEDA', color:'#633806', border:'#EF9F27'},
+  'Thriller':            {bg:'#F1EFE8', color:'#444441', border:'#888780'},
+  'NoFiction':           {bg:'#FAECE7', color:'#712B13', border:'#993C1D'},
+  'Growing':             {bg:'#EAF3DE', color:'#3B6D11', border:'#639922'},
+  'Humor':               {bg:'#FAEEDA', color:'#854F0B', border:'#EF9F27'},
+  'Libros sobre libros': {bg:'#FBEAF0', color:'#72243E', border:'#993556'},
+  'Mitología':           {bg:'#EEEDFE', color:'#26215C', border:'#7F77DD'},
+  'Sci-Fi':              {bg:'#E6F1FB', color:'#0C447C', border:'#185FA5'},
+  'Romance':             {bg:'#FCEBEB', color:'#A32D2D', border:'#E24B4A'},
+  'Distopia':            {bg:'#F1EFE8', color:'#2C2C2A', border:'#5F5E5A'},
+  'Biography':           {bg:'#FAECE7', color:'#4A1B0C', border:'#993C1D'},
+  'LGBTQ+':              {bg:'#FCEBEB', color:'#791F1F', border:'#E24B4A'},
+  'Lo amé':              {bg:'#FAC775', color:'#633806', border:'#EF9F27'},
 };
 
 const LIBROS = [
@@ -1487,16 +1487,16 @@ function actualizarStats() {
 function renderCategorias() {
   const todas = new Set();
   LIBROS.forEach(l => l.categorias.forEach(c => todas.add(c)));
+  todas.add('Lo amé'); // siempre visible aunque no haya libros con esa categoría
   const todasArr = Array.from(todas);
-  const loAme = todasArr.includes('Lo amé') ? ['Lo amé'] : [];
   const resto = todasArr.filter(c => c !== 'Lo amé').sort();
-  const cats = ['Todas', ...loAme, ...resto, 'sin-genero'];
+  const cats = ['Todas', 'Lo amé', ...resto, 'sin-genero'];
   const colores = CATEGORIAS_COLORES;
   
   const cont = document.getElementById('cats-scroll');
   cont.innerHTML = '<span class="generos-label">Géneros</span>' + cats.map(c => {
-    const col = colores[c] || {bg:'#E8B84B22', color:'#5C3D2E', border:'#E8B84B'};
-    const label = c === 'sin-genero' ? '📭 Sin género' : c === 'Todas' ? '📚 Todas' : c;
+    const col = colores[c] || {bg:'#FAEEDA', color:'#633806', border:'#EF9F27'};
+    const label = c === 'sin-genero' ? '📭 Sin género' : c === 'Todas' ? '📚 Todas' : c === 'Lo amé' ? '🧡💛 Lo amé' : c;
     return `<div class="cat-chip ${c==='Todas'?'activo':''}" 
       style="background:${col.bg};color:${col.color};border-color:${col.border}"
       onclick="filtrarCat('${c}', this)">${label}</div>`;
