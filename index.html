@@ -939,18 +939,8 @@
   .toast.visible { transform: translateX(-50%) translateY(0); }
   .toast.error { background: #C03958; }
 
-  /* BANNER DRIVE */
-  .banner-drive {
-    background: linear-gradient(135deg, var(--cafe), var(--cafe-medio));
-    color: var(--crema);
-    padding: 0.6rem 2rem;
-    font-size: 0.78rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    justify-content: center;
-  }
-  .banner-drive.oculto { display: none; }
+  /* BANNER DRIVE — oculto, reemplazado por pill en header */
+  .banner-drive { display: none !important; }
 
   /* RESPONSIVE */
   @media (max-width: 600px) {
@@ -961,6 +951,85 @@
     .stat-num { font-size: 1.1rem; }
     .edicion-grid { grid-template-columns: 1fr; }
     .usuario-nombre { display: none; }
+    .hl-dropdown-menu { min-width: 130px; }
+  }
+
+  /* NUEVO HEADER */
+  .btn-conectada {
+    background: #2d5e32; color: #a8e6ad;
+    font-size: 0.68rem; font-weight: 600;
+    padding: 0.35rem 0.85rem; border-radius: 20px;
+    border: 1px solid #4a9e50;
+    display: flex; align-items: center; gap: 0.35rem;
+    cursor: default;
+  }
+  .btn-conectada::before {
+    content: ''; width: 6px; height: 6px;
+    border-radius: 50%; background: #6ed875; display: inline-block;
+  }
+  .btn-desconectar-pill {
+    background: #5e2d2d; color: #f0a8a8;
+    font-size: 0.68rem; font-weight: 600;
+    padding: 0.35rem 0.85rem; border-radius: 20px;
+    border: 1px solid #9e4a4a;
+    display: flex; align-items: center; gap: 0.35rem;
+    cursor: pointer; font-family: 'Inter', sans-serif;
+  }
+  .btn-desconectar-pill::before {
+    content: ''; width: 6px; height: 6px;
+    border-radius: 50%; background: #e87878; display: inline-block;
+  }
+  .btn-nuevo-libro {
+    background: #7A9E7E; color: #F7F0E3;
+    border: none; border-radius: 20px;
+    padding: 0.45rem 1.1rem;
+    font-size: 0.8rem; font-weight: 600; cursor: pointer;
+    display: flex; align-items: center; gap: 0.3rem;
+    white-space: nowrap; font-family: 'Inter', sans-serif;
+    transition: all 0.2s;
+  }
+  .btn-nuevo-libro:hover { background: #5a8a5e; transform: translateY(-1px); }
+
+  /* DROPDOWNS CUSTOM */
+  .hl-dropdown { position: relative; }
+  .hl-dropdown-btn {
+    display: flex; align-items: center; gap: 0.45rem;
+    padding: 0.45rem 0.9rem; border: 1.5px solid var(--cafe-claro);
+    border-radius: 22px; background: var(--crema); color: var(--texto);
+    font-size: 0.78rem; font-weight: 500; cursor: pointer;
+    font-family: 'Inter', sans-serif; white-space: nowrap;
+    transition: border-color 0.2s; user-select: none;
+  }
+  .hl-dropdown-btn:hover { border-color: var(--cafe-medio); }
+  .hl-dropdown-btn.abierto { border-color: var(--amarillo); }
+  .hl-dropdown-btn .hl-label {
+    color: var(--texto-suave); font-size: 0.63rem;
+    font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .hl-dropdown-btn .hl-valor { color: var(--texto); }
+  .hl-dropdown-btn .hl-arrow { color: var(--texto-suave); font-size: 0.6rem; transition: transform 0.2s; }
+  .hl-dropdown-btn.abierto .hl-arrow { transform: rotate(180deg); }
+  .hl-dropdown-menu {
+    display: none; position: absolute; top: calc(100% + 6px); left: 0;
+    background: var(--crema); border: 1.5px solid var(--cafe-claro);
+    border-radius: 14px; padding: 0.4rem; min-width: 160px;
+    box-shadow: 0 4px 16px rgba(92,61,46,0.15); z-index: 200;
+  }
+  .hl-dropdown-menu.abierto { display: block; }
+  .hl-dropdown-item {
+    padding: 0.4rem 0.75rem; border-radius: 10px;
+    font-size: 0.78rem; color: var(--texto); cursor: pointer;
+    transition: background 0.15s; font-family: 'Inter', sans-serif;
+  }
+  .hl-dropdown-item:hover { background: var(--crema-oscuro); }
+  .hl-dropdown-item.activo { background: var(--cafe); color: var(--crema); font-weight: 600; }
+
+  /* GÉNEROS — nueva etiqueta */
+  .generos-label {
+    font-size: 0.62rem; color: var(--texto-suave); font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap;
+    padding-right: 0.6rem; border-right: 1.5px solid var(--cafe-claro);
+    margin-right: 0.2rem; flex-shrink: 0;
   }
 </style>
 <script src="https://accounts.google.com/gsi/client" onload="console.log('Google GSI cargado')" onerror="console.warn('Error cargando Google GSI')"></script>
@@ -975,22 +1044,21 @@
       <span>Mi Biblioteca</span>
     </div>
   </div>
-  <div style="display:flex;align-items:center;gap:1.2rem">
-    <div class="stats-header">
-      <div class="stat">
-        <div class="stat-num" id="total-libros">0</div>
-        <div class="stat-label">Total</div>
-      </div>
-      <div class="stat">
-        <div class="stat-num" id="total-leidos">0</div>
-        <div class="stat-label">Leídos</div>
-      </div>
-      <div class="stat">
-        <div class="stat-num" id="total-pendientes">0</div>
-        <div class="stat-label">Por leer</div>
-      </div>
+  <div class="stats-header">
+    <div class="stat">
+      <div class="stat-num" id="total-libros">0</div>
+      <div class="stat-label">Total</div>
     </div>
-    <!-- Zona de autenticación -->
+    <div class="stat">
+      <div class="stat-num" id="total-leidos">0</div>
+      <div class="stat-label">Leídos</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num" id="total-pendientes">0</div>
+      <div class="stat-label">Por leer</div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:0.6rem">
     <div id="zona-auth">
       <button class="btn-login" onclick="iniciarLogin()">☁️ Guardar en Drive</button>
     </div>
@@ -998,43 +1066,70 @@
   </div>
 </header>
 
-<div class="banner-drive oculto" id="banner-drive">
-  ☁️ Conectada a Google Drive — los cambios se guardan automáticamente
-</div>
+<div class="banner-drive oculto" id="banner-drive"></div>
 
 <div class="barra-fija">
-<div class="controles">
-  <div class="buscador">
-    <input type="text" id="buscar" placeholder="Buscar por título o autor...">
-  </div>
-  <div class="filtros">
-    <button class="filtro-btn estado-activo" onclick="filtrarEstado('todos', this)">Todos</button>
-    <button class="filtro-btn" onclick="filtrarEstado('Leído', this)">✅ Leídos</button>
-    <button class="filtro-btn" onclick="filtrarEstado('Leyendo', this)">📖 Leyendo</button>
-    <button class="filtro-btn" onclick="filtrarEstado('Quiero leer', this)">🔖 Quiero leer</button>
-  </div>
-  <select id="orden-select" onchange="cambiarOrden(this.value)" style="padding:0.4rem 0.7rem;border:1.5px solid var(--cafe-claro);border-radius:15px;background:var(--crema);color:var(--texto-suave);font-family:'Inter',sans-serif;font-size:0.78rem;outline:none;cursor:pointer;">
-    <option value="titulo">A→Z Título</option>
-    <option value="autor">A→Z Autor</option>
-    <option value="estrellas">⭐ Estrellas</option>
-  </select>
-</div>
 
-<div class="controles" style="padding-top:0.5rem;padding-bottom:0.7rem;gap:0.4rem;">
-  <span style="font-size:0.72rem;color:var(--texto-suave);font-weight:500;text-transform:uppercase;letter-spacing:0.08em;white-space:nowrap">Formato:</span>
-  <div class="filtros">
-    <button class="filtro-btn formato-activo" onclick="filtrarFormato('todos', this)">Todos</button>
-    <button class="filtro-btn" onclick="filtrarFormato('no-tengo', this)">🚫 No lo tengo</button>
-    <button class="filtro-btn" onclick="filtrarFormato('Físico', this)">📗 Físico</button>
-    <button class="filtro-btn" onclick="filtrarFormato('EPUB', this)">📱 EPUB</button>
-    <button class="filtro-btn" onclick="filtrarFormato('PDF', this)">📄 PDF</button>
-    <button class="filtro-btn" onclick="filtrarFormato('Audiolibro', this)">🎧 Audiolibro</button>
-  </div>
-</div>
+  <!-- Fila 1: buscador + dropdowns -->
+  <div class="controles">
+    <div class="buscador">
+      <input type="text" id="buscar" placeholder="Buscar por título o autor...">
+    </div>
 
-<div class="cats-scroll" id="cats-scroll">
-  <div class="cat-chip activo" style="background:#E8B84B22;border-color:#E8B84B;color:#5C3D2E" onclick="filtrarCat('Todas', this)">📚 Todas</div>
-</div>
+    <!-- Estado dropdown -->
+    <div class="hl-dropdown" id="dd-estado">
+      <div class="hl-dropdown-btn" onclick="toggleDropdown('dd-estado')">
+        <span class="hl-label">Estado</span>
+        <span class="hl-valor" id="dd-estado-valor">Todos</span>
+        <span class="hl-arrow">▾</span>
+      </div>
+      <div class="hl-dropdown-menu" id="dd-estado-menu">
+        <div class="hl-dropdown-item activo" onclick="seleccionarEstado('todos','Todos','dd-estado')">Todos</div>
+        <div class="hl-dropdown-item" onclick="seleccionarEstado('Leído','✅ Leídos','dd-estado')">✅ Leídos</div>
+        <div class="hl-dropdown-item" onclick="seleccionarEstado('Leyendo','📖 Leyendo','dd-estado')">📖 Leyendo</div>
+        <div class="hl-dropdown-item" onclick="seleccionarEstado('Quiero leer','🔖 Quiero leer','dd-estado')">🔖 Quiero leer</div>
+      </div>
+    </div>
+
+    <!-- Formato dropdown -->
+    <div class="hl-dropdown" id="dd-formato">
+      <div class="hl-dropdown-btn" onclick="toggleDropdown('dd-formato')">
+        <span class="hl-label">Formato</span>
+        <span class="hl-valor" id="dd-formato-valor">Todos</span>
+        <span class="hl-arrow">▾</span>
+      </div>
+      <div class="hl-dropdown-menu" id="dd-formato-menu">
+        <div class="hl-dropdown-item activo" onclick="seleccionarFormato('todos','Todos','dd-formato')">Todos</div>
+        <div class="hl-dropdown-item" onclick="seleccionarFormato('no-tengo','🚫 No lo tengo','dd-formato')">🚫 No lo tengo</div>
+        <div class="hl-dropdown-item" onclick="seleccionarFormato('sin-formato','📭 Sin formato','dd-formato')">📭 Sin formato</div>
+        <div class="hl-dropdown-item" onclick="seleccionarFormato('Físico','📗 Físico','dd-formato')">📗 Físico</div>
+        <div class="hl-dropdown-item" onclick="seleccionarFormato('EPUB','📱 EPUB','dd-formato')">📱 EPUB</div>
+        <div class="hl-dropdown-item" onclick="seleccionarFormato('PDF','📄 PDF','dd-formato')">📄 PDF</div>
+        <div class="hl-dropdown-item" onclick="seleccionarFormato('Audiolibro','🎧 Audiolibro','dd-formato')">🎧 Audiolibro</div>
+      </div>
+    </div>
+
+    <!-- Ordenar dropdown -->
+    <div class="hl-dropdown" id="dd-orden">
+      <div class="hl-dropdown-btn" onclick="toggleDropdown('dd-orden')">
+        <span class="hl-label">Ordenar</span>
+        <span class="hl-valor" id="dd-orden-valor">A→Z Título</span>
+        <span class="hl-arrow">▾</span>
+      </div>
+      <div class="hl-dropdown-menu" id="dd-orden-menu">
+        <div class="hl-dropdown-item activo" onclick="seleccionarOrden('titulo','A→Z Título','dd-orden')">A→Z Título</div>
+        <div class="hl-dropdown-item" onclick="seleccionarOrden('autor','A→Z Autor','dd-orden')">A→Z Autor</div>
+        <div class="hl-dropdown-item" onclick="seleccionarOrden('estrellas','⭐ Estrellas','dd-orden')">⭐ Estrellas</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fila 2: géneros -->
+  <div class="cats-scroll" id="cats-scroll" style="padding-left:2rem;padding-right:2rem">
+    <span class="generos-label">Géneros</span>
+    <div class="cat-chip activo" style="background:#E8B84B22;border-color:#E8B84B;color:#5C3D2E" onclick="filtrarCat('Todas', this)">📚 Todas</div>
+  </div>
+
 </div>
 
 <div class="grid-libros" id="grid"></div>
@@ -1303,15 +1398,16 @@ function actualizarStats() {
 function renderCategorias() {
   const todas = new Set();
   LIBROS.forEach(l => l.categorias.forEach(c => todas.add(c)));
-  const cats = ['Todas', ...Array.from(todas).sort()];
+  const cats = ['Todas', ...Array.from(todas).sort(), 'sin-genero'];
   const colores = CATEGORIAS_COLORES;
   
   const cont = document.getElementById('cats-scroll');
-  cont.innerHTML = cats.map(c => {
+  cont.innerHTML = '<span class="generos-label">Géneros</span>' + cats.map(c => {
     const col = colores[c] || {bg:'#E8B84B22', color:'#5C3D2E', border:'#E8B84B'};
+    const label = c === 'sin-genero' ? '📭 Sin género' : c === 'Todas' ? '📚 Todas' : c;
     return `<div class="cat-chip ${c==='Todas'?'activo':''}" 
       style="background:${col.bg};color:${col.color};border-color:${col.border}"
-      onclick="filtrarCat('${c}', this)">${c}</div>`;
+      onclick="filtrarCat('${c}', this)">${label}</div>`;
   }).join('');
 }
 
@@ -1337,6 +1433,56 @@ function filtrarCat(cat, el) {
   renderLibros();
 }
 
+// ---- DROPDOWNS CUSTOM ----
+function toggleDropdown(id) {
+  const dd = document.getElementById(id);
+  const btn = dd.querySelector('.hl-dropdown-btn');
+  const menu = dd.querySelector('.hl-dropdown-menu');
+  const estaAbierto = menu.classList.contains('abierto');
+  // Cerrar todos
+  document.querySelectorAll('.hl-dropdown-menu').forEach(m => m.classList.remove('abierto'));
+  document.querySelectorAll('.hl-dropdown-btn').forEach(b => b.classList.remove('abierto'));
+  if (!estaAbierto) {
+    menu.classList.add('abierto');
+    btn.classList.add('abierto');
+  }
+}
+
+// Cerrar dropdowns al hacer clic fuera
+document.addEventListener('click', e => {
+  if (!e.target.closest('.hl-dropdown')) {
+    document.querySelectorAll('.hl-dropdown-menu').forEach(m => m.classList.remove('abierto'));
+    document.querySelectorAll('.hl-dropdown-btn').forEach(b => b.classList.remove('abierto'));
+  }
+});
+
+function seleccionarEstado(valor, label, ddId) {
+  filtroEstado = valor;
+  document.getElementById('dd-estado-valor').textContent = label;
+  document.querySelectorAll('#dd-estado-menu .hl-dropdown-item').forEach(i => i.classList.remove('activo'));
+  event.target.classList.add('activo');
+  toggleDropdown(ddId);
+  renderLibros();
+}
+
+function seleccionarFormato(valor, label, ddId) {
+  filtroFormato = valor;
+  document.getElementById('dd-formato-valor').textContent = label;
+  document.querySelectorAll('#dd-formato-menu .hl-dropdown-item').forEach(i => i.classList.remove('activo'));
+  event.target.classList.add('activo');
+  toggleDropdown(ddId);
+  renderLibros();
+}
+
+function seleccionarOrden(valor, label, ddId) {
+  ordenActual = valor;
+  document.getElementById('dd-orden-valor').textContent = label;
+  document.querySelectorAll('#dd-orden-menu .hl-dropdown-item').forEach(i => i.classList.remove('activo'));
+  event.target.classList.add('activo');
+  toggleDropdown(ddId);
+  renderLibros();
+}
+
 function cambiarOrden(valor) {
   ordenActual = valor;
   renderLibros();
@@ -1352,10 +1498,15 @@ function librosFiltrados() {
     let matchFormato = true;
     if (filtroFormato === 'no-tengo') {
       matchFormato = l.loTengo === false;
+    } else if (filtroFormato === 'sin-formato') {
+      matchFormato = !l.formato || l.formato.length === 0;
     } else if (filtroFormato !== 'todos') {
       matchFormato = (l.formato || []).includes(filtroFormato);
     }
-    return matchEstado && matchCat && matchBusqueda && matchFormato;
+    const matchCatFinal = filtroCategoria === 'sin-genero'
+      ? (!l.categorias || l.categorias.length === 0)
+      : (filtroCategoria === 'Todas' || l.categorias.includes(filtroCategoria));
+    return matchEstado && matchCatFinal && matchBusqueda && matchFormato;
   });
 
   // Ordenar
@@ -1622,11 +1773,11 @@ async function obtenerNombreUsuario() {
 
 function mostrarUsuarioConectado() {
   document.getElementById('zona-auth').innerHTML = `
-    <div class="usuario-info">
-      <span class="usuario-nombre">✨ ${usuarioNombre}</span>
-      <button class="btn-logout" onclick="cerrarSesion()">Desconectar</button>
+    <div style="display:flex;align-items:center;gap:0.6rem">
+      <div class="btn-conectada">Conectada</div>
+      <span style="color:var(--amarillo-claro);font-size:0.75rem;font-weight:500">✨ ${usuarioNombre}</span>
+      <button class="btn-desconectar-pill" onclick="cerrarSesion()">Desconectar</button>
     </div>`;
-  document.getElementById('banner-drive').classList.remove('oculto');
 }
 
 function cerrarSesion() {
