@@ -672,6 +672,38 @@
   .btn-guardar:disabled { opacity: 0.6; cursor: not-allowed; }
 
   /* SUBIR PORTADA */
+  /* BÚSQUEDA DE PORTADAS */
+  .portada-busqueda-wrap { margin-bottom: 0.6rem; }
+  .portada-busqueda-input {
+    display: flex; gap: 0.4rem; margin-bottom: 0.5rem;
+  }
+  .portada-busqueda-input input {
+    flex: 1; padding: 0.4rem 0.7rem;
+    border: 1.5px solid var(--cafe-claro); border-radius: 8px;
+    font-family: 'Inter', sans-serif; font-size: 0.8rem;
+    color: var(--texto); background: white; outline: none;
+  }
+  .portada-busqueda-input input:focus { border-color: var(--amarillo); }
+  .btn-buscar-portada {
+    padding: 0.4rem 0.8rem; background: var(--amarillo); color: var(--cafe);
+    border: none; border-radius: 8px; font-size: 0.75rem; font-weight: 600;
+    cursor: pointer; font-family: 'Inter', sans-serif; white-space: nowrap;
+    transition: all 0.2s;
+  }
+  .btn-buscar-portada:hover { background: var(--amarillo-claro); }
+  .portadas-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem;
+    margin-bottom: 0.5rem;
+  }
+  .portada-opcion {
+    aspect-ratio: 2/3; border-radius: 6px; overflow: hidden;
+    cursor: pointer; border: 2px solid transparent;
+    transition: all 0.2s; background: var(--crema-oscuro);
+  }
+  .portada-opcion:hover { border-color: var(--amarillo); transform: scale(1.03); }
+  .portada-opcion img { width: 100%; height: 100%; object-fit: cover; }
+  .portada-opcion.seleccionada { border-color: var(--verde); }
+
   .portada-upload-area {
     border: 2px dashed var(--cafe-claro);
     border-radius: 10px;
@@ -1781,13 +1813,28 @@ function panelEdicion(l) {
 
     // 8. Portada
     '<div class="edicion-full"><label>Portada</label>' +
+    '<div class="portada-busqueda-wrap">' +
+    '<div class="portada-busqueda-input">' +
+    '<input type="text" id="busq-portada-' + lid + '" placeholder="Buscar portada por título..." value="' + l.titulo + '">' +
+    '<button class="btn-buscar-portada" onclick="buscarPortadas(' + lid + ')">🔍 Buscar</button>' +
+    '</div>' +
+    '<div class="portadas-grid" id="portadas-grid-' + lid + '"></div>' +
+    '</div>' +
     '<div class="portada-upload-area" onclick="document.getElementById(\'file-portada-' + lid + '\').click()">' +
     '<input type="file" id="file-portada-' + lid + '" accept="image/*" style="display:none" onchange="previsualizarPortada(' + lid + ',this)">' +
     portadaHtml +
     '<div class="portada-upload-texto" id="texto-portada-' + lid + '">' +
-    '<strong>' + (portadaActual ? '🖼️ Cambiar portada' : '📷 Subir portada') + '</strong>' +
+    '<strong>' + (portadaActual ? '🖼️ Cambiar portada' : '📷 O subir imagen manual') + '</strong>' +
     (portadaActual ? '' : '<br>Toca para elegir una imagen') +
     '</div></div></div>' +
+
+    // 9. Reseña
+    '<div class="edicion-full"><label>📖 De qué trata</label>' +
+    '<textarea id="edit-resena-' + lid + '" placeholder="Escribe o pega la reseña aquí...">' + (l.resena || '') + '</textarea></div>' +
+
+    // 10. Diferencial
+    '<div class="edicion-full"><label>✨ Lo que lo hace especial</label>' +
+    '<textarea id="edit-diferencial-' + lid + '" placeholder="Escribe o pega el diferencial aquí...">' + (l.diferencial || '') + '</textarea></div>' +
 
     // Botón guardar + eliminar
     '<button class="btn-guardar" id="btn-guardar-' + lid + '" onclick="guardarLibro(' + lid + ')">💾 Guardar cambios</button>' +
@@ -1798,6 +1845,53 @@ function panelEdicion(l) {
     '</div></div>';
 }
 
+
+// Buscar portadas en Open Library
+async function buscarPortadas(id) {
+  const input = document.getElementById('busq-portada-' + id);
+  const grid = document.getElementById('portadas-grid-' + id);
+  if (!input || !grid) return;
+  const q = input.value.trim();
+  if (!q) return;
+
+  grid.innerHTML = '<span style="font-size:0.75rem;color:var(--texto-suave)"><span class="spinner"></span>Buscando portadas...</span>';
+
+  try {
+    const res = await fetch('https://openlibrary.org/search.json?q=' + encodeURIComponent(q) + '&limit=8&fields=cover_i,title,author_name');
+    const data = await res.json();
+    const docs = (data.docs || []).filter(d => d.cover_i);
+
+    if (docs.length === 0) {
+      grid.innerHTML = '<span style="font-size:0.75rem;color:var(--texto-suave)">No encontré portadas. Intenta con otro término.</span>';
+      return;
+    }
+
+    grid.innerHTML = '';
+    docs.slice(0, 8).forEach(doc => {
+      const url = 'https://covers.openlibrary.org/b/id/' + doc.cover_i + '-M.jpg';
+      const urlGrande = 'https://covers.openlibrary.org/b/id/' + doc.cover_i + '-L.jpg';
+      const div = document.createElement('div');
+      div.className = 'portada-opcion';
+      div.title = doc.title + (doc.author_name ? ' — ' + doc.author_name[0] : '');
+      div.innerHTML = '<img src="' + url + '" loading="lazy" onerror="this.parentElement.style.display=\'none\'">';
+      div.onclick = () => {
+        // Marcar como seleccionada
+        grid.querySelectorAll('.portada-opcion').forEach(d => d.classList.remove('seleccionada'));
+        div.classList.add('seleccionada');
+        // Actualizar preview en el área de portada
+        portadaBase64[id] = urlGrande;
+        const preview = document.getElementById('preview-portada-' + id);
+        const texto = document.getElementById('texto-portada-' + id);
+        if (preview) { preview.src = urlGrande; preview.style.display = 'block'; }
+        if (texto) texto.innerHTML = '<strong>🖼️ Cambiar portada</strong>';
+        mostrarToast('✅ Portada seleccionada — guarda para aplicar');
+      };
+      grid.appendChild(div);
+    });
+  } catch(e) {
+    grid.innerHTML = '<span style="font-size:0.75rem;color:var(--texto-suave)">Error buscando portadas.</span>';
+  }
+}
 
 function toggleEdicion(btn) {
   btn.classList.toggle('abierto');
@@ -1921,6 +2015,12 @@ async function guardarLibro(id) {
   if (frasesEl) l.frases = frasesEl.value;
   if (loTengoEl) l.loTengo = loTengoEl.checked;
   if (calificacionEditando !== null) l.calificacion = calificacionEditando;
+
+  // Reseña y diferencial
+  const resenaEl = document.getElementById('edit-resena-' + id);
+  const diferencialEl = document.getElementById('edit-diferencial-' + id);
+  if (resenaEl) l.resena = resenaEl.value;
+  if (diferencialEl) l.diferencial = diferencialEl.value;
 
   // Recoger formatos seleccionados
   const formatos = ['Físico', 'EPUB', 'PDF', 'Audiolibro'];
