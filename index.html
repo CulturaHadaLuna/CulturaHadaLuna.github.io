@@ -961,17 +961,21 @@
   .lista-libros { padding: 1rem 2rem; max-width: 1400px; margin: 0 auto; }
   .lista-header {
     display: grid;
-    grid-template-columns: 44px 1fr 110px 90px 90px 140px 95px 32px;
+    grid-template-columns: 44px 1fr 130px 110px 90px 90px 130px 90px 32px;
     gap: 0.5rem; padding: 0.3rem 0.8rem;
     border-bottom: 2px solid var(--cafe-claro); margin-bottom: 0.2rem;
   }
   .lista-header span {
     font-size: 0.6rem; color: var(--texto-suave);
     font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+    cursor: pointer; user-select: none; display: flex; align-items: center; gap: 0.2rem;
+    transition: color 0.15s;
   }
+  .lista-header span:hover { color: var(--cafe); }
+  .lista-header span.col-activa { color: var(--cafe); }
   .lista-fila {
     display: grid;
-    grid-template-columns: 44px 1fr 110px 90px 90px 140px 95px 32px;
+    grid-template-columns: 44px 1fr 130px 110px 90px 90px 130px 90px 32px;
     gap: 0.5rem; padding: 0.45rem 0.8rem;
     border-bottom: 1px solid var(--crema-oscuro);
     align-items: center; cursor: pointer; border-radius: 8px;
@@ -1691,6 +1695,73 @@ async function cargarPortada(img, placeholder, titulo, autor, portadaUrl) {
 }
 
 let vistaActual = window.innerWidth <= 600 ? 'grid' : 'grid';
+let ordenColumna = { campo: null, dir: 'desc' };
+
+function ordenarPorColumna(campo) {
+  if (ordenColumna.campo === campo) {
+    ordenColumna.dir = ordenColumna.dir === 'desc' ? 'asc' : 'desc';
+  } else {
+    ordenColumna.campo = campo;
+    ordenColumna.dir = 'desc';
+  }
+  renderLibros();
+}
+
+function aplicarOrdenColumna(libros) {
+  if (!ordenColumna.campo) return libros;
+  const { campo, dir } = ordenColumna;
+  return [...libros].sort((a, b) => {
+    let va, vb;
+    if (campo === 'calificacion') {
+      va = a.calificacion || -1;
+      vb = b.calificacion || -1;
+      if (va === -1 && vb === -1) return 0;
+      if (va === -1) return 1;
+      if (vb === -1) return -1;
+      return dir === 'desc' ? vb - va : va - vb;
+    }
+    if (campo === 'autor') {
+      va = a.autor || '';
+      vb = b.autor || '';
+      if (!va && !vb) return 0;
+      if (!va) return 1;
+      if (!vb) return -1;
+      return dir === 'desc' ? va.localeCompare(vb, 'es') : vb.localeCompare(va, 'es');
+    }
+    if (campo === 'estado') {
+      const orden = ['Leído', 'Leyendo', 'Quiero leer'];
+      va = orden.indexOf(a.estado);
+      vb = orden.indexOf(b.estado);
+      return dir === 'desc' ? va - vb : vb - va;
+    }
+    if (campo === 'formato') {
+      va = (a.formato || []).join(',') || '';
+      vb = (b.formato || []).join(',') || '';
+      if (!va && !vb) return 0;
+      if (!va) return 1;
+      if (!vb) return -1;
+      return dir === 'desc' ? va.localeCompare(vb, 'es') : vb.localeCompare(va, 'es');
+    }
+    if (campo === 'fechaFin') {
+      va = a.fechaFin || '';
+      vb = b.fechaFin || '';
+      if (!va && !vb) return 0;
+      if (!va) return 1;
+      if (!vb) return -1;
+      return dir === 'desc' ? vb.localeCompare(va) : va.localeCompare(vb);
+    }
+    return 0;
+  });
+}
+
+function indicador(campo) {
+  if (ordenColumna.campo !== campo) return '';
+  return ordenColumna.dir === 'desc' ? ' ▼' : ' ▲';
+}
+
+function claseActiva(campo) {
+  return ordenColumna.campo === campo ? ' col-activa' : '';
+}
 
 function cambiarVista(vista) {
   // En móvil siempre grid
@@ -1715,26 +1786,29 @@ function renderLibros() {
 
   if (vista === 'lista') {
     contenedor.className = 'lista-libros';
+    const librosOrdenados = aplicarOrdenColumna(libros);
     contenedor.innerHTML =
       '<div class="lista-header">' +
         '<span></span>' +
-        '<span>Título / Autor</span>' +
-        '<span>Calificación</span>' +
-        '<span>Estado</span>' +
-        '<span>Formato</span>' +
+        '<span>Título</span>' +
+        '<span class="' + claseActiva('autor') + '" onclick="ordenarPorColumna(\'autor\')">Autor' + indicador('autor') + '</span>' +
+        '<span class="' + claseActiva('calificacion') + '" onclick="ordenarPorColumna(\'calificacion\')">Calificación' + indicador('calificacion') + '</span>' +
+        '<span class="' + claseActiva('estado') + '" onclick="ordenarPorColumna(\'estado\')">Estado' + indicador('estado') + '</span>' +
+        '<span class="' + claseActiva('formato') + '" onclick="ordenarPorColumna(\'formato\')">Formato' + indicador('formato') + '</span>' +
         '<span>Género</span>' +
-        '<span>Fecha fin</span>' +
+        '<span class="' + claseActiva('fechaFin') + '" onclick="ordenarPorColumna(\'fechaFin\')">Fecha fin' + indicador('fechaFin') + '</span>' +
         '<span></span>' +
       '</div>' +
-      libros.map(l => {
+      librosOrdenados.map(l => {
         const estrellas = l.calificacion ? renderEstrellas(l.calificacion) + ' ' + l.calificacion : '—';
         const formato = (l.formato || []).join(', ') || '—';
         const generos = l.categorias.slice(0, 2).map(c => catMini(c)).join('');
-        const fecha = l.fechaFin ? formatearFecha(l.fechaFin) : (l.estado === 'Leído' ? '—' : '');
+        const fecha = l.fechaFin ? formatearFecha(l.fechaFin) : '';
         return '<div class="lista-fila" onclick="abrirModal(' + l.id + ')">' +
           '<div id="lph-' + l.id + '" class="lista-portada-ph">📖</div>' +
           '<img id="limg-' + l.id + '" class="lista-portada" style="display:none" alt="">' +
-          '<div><div class="lista-titulo">' + l.titulo + '</div><div class="lista-autor">' + l.autor + '</div></div>' +
+          '<div class="lista-titulo">' + l.titulo + '</div>' +
+          '<div class="lista-autor">' + l.autor + '</div>' +
           '<div class="lista-cal">' + estrellas + '</div>' +
           '<div>' + badgeEstado(l.estado) + '</div>' +
           '<div class="lista-formato">' + formato + '</div>' +
