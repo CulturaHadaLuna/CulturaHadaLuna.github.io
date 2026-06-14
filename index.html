@@ -2606,40 +2606,76 @@ async function buscarLibroNuevo() {
   document.getElementById('campos-extra').style.display = 'none';
 
   try {
-    // Open Library search
-    const q = encodeURIComponent(titulo + (autor ? ' ' + autor : ''));
-    const res = await fetch('https://openlibrary.org/search.json?q=' + q + '&limit=4&fields=key,title,author_name,number_of_pages_median,cover_i,first_publish_year');
-    const data = await res.json();
-    const docs = data.docs || [];
+    const q = titulo + (autor ? ' ' + autor : '');
+    const resultados = [];
 
-    if (docs.length === 0) {
-      mostrarToast('No encontré ese libro. Intenta con otro título.', true);
+    // Buscar en paralelo: Open Library + Google Books
+    const [olRes, gbRes] = await Promise.allSettled([
+      fetch('https://openlibrary.org/search.json?q=' + encodeURIComponent(q) + '&limit=4&fields=key,title,author_name,number_of_pages_median,cover_i,first_publish_year'),
+      fetch('https://www.googleapis.com/books/v1/volumes?q=' + encodeURIComponent(q) + '&maxResults=4&fields=items(volumeInfo(title,authors,pageCount,imageLinks,publishedDate))')
+    ]);
+
+    // Procesar Open Library
+    if (olRes.status === 'fulfilled') {
+      const olData = await olRes.value.json();
+      (olData.docs || []).slice(0, 4).forEach(doc => {
+        resultados.push({
+          fuente: 'OL',
+          titulo: doc.title,
+          autor: (doc.author_name || [''])[0],
+          paginas: doc.number_of_pages_median || null,
+          anio: doc.first_publish_year || '',
+          portada: doc.cover_i ? 'https://covers.openlibrary.org/b/id/' + doc.cover_i + '-S.jpg' : '',
+          portadaGrande: doc.cover_i ? 'https://covers.openlibrary.org/b/id/' + doc.cover_i + '-L.jpg' : '',
+          _raw: doc
+        });
+      });
+    }
+
+    // Procesar Google Books
+    if (gbRes.status === 'fulfilled') {
+      const gbData = await gbRes.value.json();
+      (gbData.items || []).slice(0, 4).forEach(item => {
+        const info = item.volumeInfo || {};
+        const thumb = info.imageLinks?.thumbnail;
+        resultados.push({
+          fuente: 'GB',
+          titulo: info.title || '',
+          autor: (info.authors || [''])[0],
+          paginas: info.pageCount || null,
+          anio: (info.publishedDate || '').substring(0, 4),
+          portada: thumb ? thumb.replace('http://', 'https://') : '',
+          portadaGrande: thumb ? thumb.replace('http://', 'https://').replace('zoom=1', 'zoom=3').replace('&edge=curl', '') : '',
+          _raw: item
+        });
+      });
+    }
+
+    if (resultados.length === 0) {
+      mostrarToast('No encontré ese libro en ninguna fuente. Intenta con el ISBN.', true);
       btn.disabled = false; btn.textContent = 'Buscar';
       return;
     }
 
-    // Mostrar resultados para elegir
+    // Mostrar resultados
     const lista = document.getElementById('lista-resultados');
     lista.innerHTML = '';
-    docs.slice(0, 4).forEach((doc, i) => {
-      const portada = doc.cover_i 
-        ? 'https://covers.openlibrary.org/b/id/' + doc.cover_i + '-S.jpg'
-        : '';
-      const autorDoc = (doc.author_name || [''])[0];
-      const paginas = doc.number_of_pages_median || '';
-      const anio = doc.first_publish_year || '';
+    resultados.slice(0, 6).forEach(r => {
+      const fuenteLabel = r.fuente === 'OL'
+        ? '<span style="font-size:0.6rem;background:#E8B84B33;color:#7A5A0A;padding:0.1rem 0.4rem;border-radius:6px;margin-left:0.3rem">Open Library</span>'
+        : '<span style="font-size:0.6rem;background:#4A8BC433;color:#1A4A7A;padding:0.1rem 0.4rem;border-radius:6px;margin-left:0.3rem">Google Books</span>';
 
       const card = document.createElement('div');
       card.className = 'resultado-libro';
-      card.innerHTML = 
-        (portada ? '<img class="resultado-portada-mini" src="' + portada + '" onerror="this.style.display=\'none\'">' : '<div class="resultado-portada-mini"></div>') +
+      card.innerHTML =
+        (r.portada ? '<img class="resultado-portada-mini" src="' + r.portada + '" onerror="this.style.display=\'none\'">' : '<div class="resultado-portada-mini"></div>') +
         '<div class="resultado-info">' +
-          '<div class="resultado-titulo">' + doc.title + '</div>' +
-          '<div class="resultado-autor">' + autorDoc + '</div>' +
-          '<div class="resultado-meta">' + (paginas ? paginas + ' pág.' : '') + (anio ? (paginas ? ' · ' : '') + anio : '') + '</div>' +
+          '<div class="resultado-titulo">' + r.titulo + fuenteLabel + '</div>' +
+          '<div class="resultado-autor">' + r.autor + '</div>' +
+          '<div class="resultado-meta">' + (r.paginas ? r.paginas + ' pág.' : '') + (r.anio ? (r.paginas ? ' · ' : '') + r.anio : '') + '</div>' +
         '</div>' +
         '<span class="resultado-elegir">Elegir →</span>';
-      card.onclick = () => seleccionarLibro(doc);
+      card.onclick = () => seleccionarLibroResultado(r);
       lista.appendChild(card);
     });
 
@@ -2652,6 +2688,28 @@ async function buscarLibroNuevo() {
     btn.disabled = false;
     btn.textContent = 'Buscar';
   }
+}
+
+async function seleccionarLibroResultado(r) {
+  document.getElementById('resultados-busqueda').style.display = 'none';
+  libroNuevoTemp = {
+    titulo: r.titulo,
+    autor: r.autor,
+    paginas: r.paginas,
+    portadaUrl: r.portadaGrande
+  };
+
+  document.getElementById('preview-titulo-nuevo').textContent = r.titulo;
+  document.getElementById('preview-autor-nuevo').textContent = r.autor;
+  document.getElementById('preview-paginas-nuevo').textContent = r.paginas ? r.paginas + ' páginas' : '';
+  const imgEl = document.getElementById('preview-img-nueva');
+  if (r.portadaGrande) { imgEl.src = r.portadaGrande; imgEl.style.display = 'block'; }
+  else { imgEl.style.display = 'none'; }
+  document.getElementById('preview-nuevo').classList.add('visible');
+  document.getElementById('btn-cancelar-wrap').style.display = 'block';
+
+  await generarResenaConClaude(r.titulo, r.autor);
+  document.getElementById('campos-extra').style.display = 'block';
 }
 
 async function seleccionarLibro(doc) {
