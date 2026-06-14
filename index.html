@@ -37,9 +37,6 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    position: sticky;
-    top: 0;
-    z-index: 100;
     box-shadow: 0 2px 12px var(--sombra);
   }
 
@@ -100,18 +97,19 @@
     letter-spacing: 0.08em;
   }
 
-  /* CONTROLES */
   /* BARRA FILTROS FIJA */
-  .barra-fija {
+  .todo-fijo {
     position: sticky;
     top: 0;
-    z-index: 90;
+    z-index: 100;
+  }
+  .barra-fija {
     box-shadow: 0 2px 8px var(--sombra);
   }
 
   .controles {
     background: var(--crema-oscuro);
-    padding: 1.2rem 2rem;
+    padding: 0.7rem 2rem;
     border-bottom: 1px solid var(--cafe-claro);
     display: flex;
     gap: 1rem;
@@ -183,11 +181,12 @@
   /* CATEGORIAS */
   .cats-scroll {
     background: var(--crema);
-    padding: 0.8rem 2rem;
+    padding: 0.45rem 2rem;
     border-bottom: 1px solid var(--crema-oscuro);
     display: flex;
     flex-wrap: wrap;
     gap: 0.4rem;
+    align-items: center;
   }
 
   .cat-chip {
@@ -1105,6 +1104,7 @@
 </head>
 <body>
 
+<div class="todo-fijo">
 <header>
   <div class="logo">
     <div class="logo-icon">📚</div>
@@ -1205,6 +1205,7 @@
     <div class="cat-chip activo" style="background:#E8B84B22;border-color:#E8B84B;color:#5C3D2E" onclick="filtrarCat('Todas', this)">📚 Todas</div>
   </div>
 
+</div>
 </div>
 
 <div class="grid-libros" id="grid"></div>
@@ -1486,7 +1487,10 @@ function actualizarStats() {
 function renderCategorias() {
   const todas = new Set();
   LIBROS.forEach(l => l.categorias.forEach(c => todas.add(c)));
-  const cats = ['Todas', ...Array.from(todas).sort(), 'sin-genero'];
+  const todasArr = Array.from(todas);
+  const loAme = todasArr.includes('Lo amé') ? ['Lo amé'] : [];
+  const resto = todasArr.filter(c => c !== 'Lo amé').sort();
+  const cats = ['Todas', ...loAme, ...resto, 'sin-genero'];
   const colores = CATEGORIAS_COLORES;
   
   const cont = document.getElementById('cats-scroll');
@@ -2212,6 +2216,22 @@ function panelEdicion(l) {
     '<label>Páginas</label>' +
     '<input type="number" id="edit-paginas-' + lid + '" value="' + (l.paginas || '') + '" placeholder="—"></div></div>' +
 
+    // 5b. Categorías
+    '<div class="edicion-full"><label>Géneros / Categorías</label>' +
+    '<div class="formato-chips" style="flex-wrap:wrap">' +
+    (() => {
+      const todasCats = ['Lo amé','Biography','Cozy & Contemplative','Colombia','Distopia','Fantasy','Fiction','Growing','Historical Fiction','Humor','LGBTQ+','Libros sobre libros','Mitología','NoFiction','Novela','Romance','Sci-Fi','Thriller','Woman Power'];
+      return todasCats.map(cat => {
+        const sel = (l.categorias || []).includes(cat);
+        const col = CATEGORIAS_COLORES[cat] || {bg:'#E8B84B22', color:'#5C3D2E', border:'#E8B84B'};
+        return '<label class="formato-chip' + (sel ? ' seleccionado' : '') + '" id="catchip-' + lid + '-' + cat.replace(/[^a-zA-Z0-9]/g,'_') + '" ' +
+          'style="' + (sel ? 'background:' + col.border + ';color:white;border-color:' + col.border : 'background:' + col.bg + ';color:' + col.color + ';border-color:' + col.border) + '">' +
+          '<input type="checkbox" value="' + cat + '"' + (sel ? ' checked' : '') + ' onchange="toggleCategoria(' + lid + ',\'' + cat + '\',this.checked)">' +
+          cat + '</label>';
+      }).join('');
+    })() +
+    '</div></div>' +
+
     // 6. Análisis
     '<div class="edicion-full"><label>Mi análisis personal</label>' +
     '<textarea id="edit-analisis-' + lid + '" placeholder="Escribe tu análisis aquí...">' + (l.analisis || '') + '</textarea></div>' +
@@ -2319,6 +2339,18 @@ document.addEventListener('change', e => {
   }
 });
 
+function toggleCategoria(id, cat, checked) {
+  const chipId = 'catchip-' + id + '-' + cat.replace(/[^a-zA-Z0-9]/g,'_');
+  const chip = document.getElementById(chipId);
+  const col = CATEGORIAS_COLORES[cat] || {bg:'#E8B84B22', color:'#5C3D2E', border:'#E8B84B'};
+  if (chip) {
+    chip.classList.toggle('seleccionado', checked);
+    chip.style.background = checked ? col.border : col.bg;
+    chip.style.color = checked ? 'white' : col.color;
+    chip.style.borderColor = col.border;
+  }
+}
+
 function toggleFormato(id, formato, checked) {
   const chip = document.getElementById(`chip-${id}-${formato}`);
   if (chip) chip.classList.toggle('seleccionado', checked);
@@ -2425,8 +2457,14 @@ async function guardarLibro(id) {
   if (loTengoEl) l.loTengo = loTengoEl.checked;
   if (calificacionEditando !== null) l.calificacion = calificacionEditando;
 
-  // Reseña y diferencial
-  const resenaEl = document.getElementById('edit-resena-' + id);
+  // Categorías seleccionadas
+  const todasCats = ['Lo amé','Biography','Cozy & Contemplative','Colombia','Distopia','Fantasy','Fiction','Growing','Historical Fiction','Humor','LGBTQ+','Libros sobre libros','Mitología','NoFiction','Novela','Romance','Sci-Fi','Thriller','Woman Power'];
+  const catsSeleccionadas = todasCats.filter(cat => {
+    const chipId = 'catchip-' + id + '-' + cat.replace(/[^a-zA-Z0-9]/g,'_');
+    const chip = document.getElementById(chipId);
+    return chip && chip.querySelector('input')?.checked;
+  });
+  if (catsSeleccionadas.length >= 0) l.categorias = catsSeleccionadas;
   const diferencialEl = document.getElementById('edit-diferencial-' + id);
   if (resenaEl) l.resena = resenaEl.value;
   if (diferencialEl) l.diferencial = diferencialEl.value;
