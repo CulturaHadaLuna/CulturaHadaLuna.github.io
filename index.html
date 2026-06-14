@@ -178,12 +178,9 @@
     padding: 0.8rem 2rem;
     border-bottom: 1px solid var(--crema-oscuro);
     display: flex;
+    flex-wrap: wrap;
     gap: 0.4rem;
-    overflow-x: auto;
-    scrollbar-width: none;
   }
-
-  .cats-scroll::-webkit-scrollbar { display: none; }
 
   .cat-chip {
     padding: 0.3rem 0.8rem;
@@ -755,6 +752,67 @@ function catMini(cat) {
   return `<span class="cat-mini" style="background:${col.bg};color:${col.color}">${cat}</span>`;
 }
 
+// Cache de portadas ya resueltas
+const portadaCache = {};
+
+function getPortadaUrl(titulo, autor, size='M') {
+  const q = encodeURIComponent(`${titulo} ${autor}`);
+  return `https://covers.openlibrary.org/b/title/${encodeURIComponent(titulo)}-${size}.jpg`;
+}
+
+function getGoogleBooksUrl(titulo, autor) {
+  const q = encodeURIComponent(`intitle:${titulo} inauthor:${autor}`);
+  return `https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=1&fields=items(volumeInfo/imageLinks)`;
+}
+
+async function cargarPortada(img, placeholder, titulo, autor) {
+  const cacheKey = titulo + autor;
+  
+  // Si ya tenemos la URL en cache
+  if (portadaCache[cacheKey]) {
+    if (portadaCache[cacheKey] === 'none') {
+      img.style.display = 'none';
+      placeholder.style.display = 'flex';
+    } else {
+      img.src = portadaCache[cacheKey];
+    }
+    return;
+  }
+
+  // Intentar Open Library primero
+  const olUrl = `https://covers.openlibrary.org/b/title/${encodeURIComponent(titulo)}-M.jpg`;
+  
+  img.onerror = async () => {
+    // Fallback: Google Books
+    try {
+      const q = encodeURIComponent(`${titulo} ${autor}`);
+      const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=1&fields=items(volumeInfo/imageLinks)`);
+      const data = await res.json();
+      const gbUrl = data?.items?.[0]?.volumeInfo?.imageLinks?.thumbnail;
+      if (gbUrl) {
+        const httpsUrl = gbUrl.replace('http://', 'https://');
+        portadaCache[cacheKey] = httpsUrl;
+        img.onerror = () => {
+          img.style.display = 'none';
+          placeholder.style.display = 'flex';
+          portadaCache[cacheKey] = 'none';
+        };
+        img.src = httpsUrl;
+      } else {
+        img.style.display = 'none';
+        placeholder.style.display = 'flex';
+        portadaCache[cacheKey] = 'none';
+      }
+    } catch {
+      img.style.display = 'none';
+      placeholder.style.display = 'flex';
+      portadaCache[cacheKey] = 'none';
+    }
+  };
+  
+  img.src = olUrl;
+}
+
 function renderLibros() {
   const libros = librosFiltrados();
   const grid = document.getElementById('grid');
@@ -765,14 +823,11 @@ function renderLibros() {
   }
   
   grid.innerHTML = libros.map(l => {
-    const portadaUrl = `https://covers.openlibrary.org/b/title/${encodeURIComponent(l.titulo)}-M.jpg`;
     return `
     <div class="tarjeta" onclick="abrirModal(${l.id})">
       <div class="portada-wrap">
-        <img src="${portadaUrl}" 
-          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
-          alt="${l.titulo}">
-        <div class="portada-placeholder" style="display:none">
+        <img id="img-${l.id}" alt="${l.titulo}" style="width:100%;height:100%;object-fit:cover">
+        <div id="ph-${l.id}" class="portada-placeholder" style="display:none">
           <span>📖</span>
           <p>${l.titulo}</p>
         </div>
@@ -786,21 +841,24 @@ function renderLibros() {
       </div>
     </div>`;
   }).join('');
+
+  // Cargar portadas después de renderizar
+  libros.forEach(l => {
+    const img = document.getElementById(`img-${l.id}`);
+    const ph = document.getElementById(`ph-${l.id}`);
+    if (img && ph) cargarPortada(img, ph, l.titulo, l.autor);
+  });
 }
 
 function abrirModal(id) {
   const l = LIBROS.find(b => b.id === id);
   if (!l) return;
   
-  const portadaUrl = `https://covers.openlibrary.org/b/title/${encodeURIComponent(l.titulo)}-L.jpg`;
-  
   document.getElementById('modal').innerHTML = `
     <div class="modal-header">
       <div class="modal-portada">
-        <img src="${portadaUrl}" 
-          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
-          alt="${l.titulo}">
-        <div class="modal-portada-placeholder" style="display:none">📖</div>
+        <img id="modal-img-${l.id}" alt="${l.titulo}" style="width:100%;height:100%;object-fit:cover">
+        <div id="modal-ph-${l.id}" class="modal-portada-placeholder" style="display:none">📖</div>
       </div>
       <div class="modal-info">
         <div class="modal-titulo">${l.titulo}</div>
@@ -844,6 +902,11 @@ function abrirModal(id) {
   
   document.getElementById('overlay').classList.add('abierto');
   document.body.style.overflow = 'hidden';
+
+  // Cargar portada del modal
+  const mImg = document.getElementById(`modal-img-${l.id}`);
+  const mPh = document.getElementById(`modal-ph-${l.id}`);
+  if (mImg && mPh) cargarPortada(mImg, mPh, l.titulo, l.autor);
 }
 
 function cerrarModal(e) {
