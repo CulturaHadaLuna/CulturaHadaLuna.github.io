@@ -2348,6 +2348,8 @@ function toggleCategoria(id, cat, checked) {
     chip.style.background = checked ? col.border : col.bg;
     chip.style.color = checked ? 'white' : col.color;
     chip.style.borderColor = col.border;
+    const input = chip.querySelector('input[type="checkbox"]');
+    if (input) input.checked = checked;
   }
 }
 
@@ -2462,9 +2464,12 @@ async function guardarLibro(id) {
   const catsSeleccionadas = todasCats.filter(cat => {
     const chipId = 'catchip-' + id + '-' + cat.replace(/[^a-zA-Z0-9]/g,'_');
     const chip = document.getElementById(chipId);
-    return chip && chip.querySelector('input')?.checked;
+    // Verificar tanto la clase como el input checkbox
+    if (!chip) return false;
+    const input = chip.querySelector('input[type="checkbox"]');
+    return input ? input.checked : chip.classList.contains('seleccionado');
   });
-  if (catsSeleccionadas.length >= 0) l.categorias = catsSeleccionadas;
+  l.categorias = catsSeleccionadas;
   const diferencialEl = document.getElementById('edit-diferencial-' + id);
   if (resenaEl) l.resena = resenaEl.value;
   if (diferencialEl) l.diferencial = diferencialEl.value;
