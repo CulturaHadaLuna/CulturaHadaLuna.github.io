@@ -1661,7 +1661,7 @@ async function cargarPortada(img, placeholder, titulo, autor, portadaUrl) {
   }
 
   // Intentar Open Library primero
-  const olUrl = `https://covers.openlibrary.org/b/title/${encodeURIComponent(titulo)}-M.jpg`;
+  const olUrl = `https://covers.openlibrary.org/b/title/${encodeURIComponent(titulo)}-L.jpg`;
   
   img.onerror = async () => {
     // Fallback: Google Books
@@ -1671,7 +1671,7 @@ async function cargarPortada(img, placeholder, titulo, autor, portadaUrl) {
       const data = await res.json();
       const gbUrl = data?.items?.[0]?.volumeInfo?.imageLinks?.thumbnail;
       if (gbUrl) {
-        const httpsUrl = gbUrl.replace('http://', 'https://');
+        const httpsUrl = gbUrl.replace('http://', 'https://').replace('zoom=1', 'zoom=3').replace('&edge=curl', '');
         portadaCache[cacheKey] = httpsUrl;
         img.onerror = () => {
           img.style.display = 'none';
