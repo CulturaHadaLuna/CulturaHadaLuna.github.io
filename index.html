@@ -465,6 +465,212 @@
 
   .vacio p { font-family: 'Playfair Display', serif; font-size: 1.1rem; }
 
+  /* BOTÓN LOGIN */
+  .btn-login {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--amarillo);
+    color: var(--cafe);
+    border: none;
+    border-radius: 20px;
+    padding: 0.5rem 1rem;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .btn-login:hover { background: var(--amarillo-claro); transform: translateY(-1px); }
+
+  .usuario-info {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .usuario-nombre {
+    color: var(--amarillo-claro);
+    font-size: 0.75rem;
+    font-weight: 400;
+  }
+  .btn-logout {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: var(--crema);
+    border-radius: 12px;
+    padding: 0.3rem 0.7rem;
+    font-size: 0.7rem;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.2s;
+  }
+  .btn-logout:hover { background: rgba(255,255,255,0.2); }
+
+  /* PANEL EDICIÓN EN MODAL */
+  .modal-edicion {
+    background: var(--crema-oscuro);
+    border-top: 1px solid var(--cafe-claro);
+    padding: 1rem 1.5rem;
+  }
+  .modal-edicion h4 {
+    font-family: 'Playfair Display', serif;
+    color: var(--cafe);
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin-bottom: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+  .edicion-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.6rem;
+    margin-bottom: 0.8rem;
+  }
+  .edicion-campo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  .edicion-campo label {
+    font-size: 0.68rem;
+    color: var(--texto-suave);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .edicion-campo select,
+  .edicion-campo input[type="date"],
+  .edicion-campo input[type="number"] {
+    padding: 0.4rem 0.6rem;
+    border: 1.5px solid var(--cafe-claro);
+    border-radius: 8px;
+    background: white;
+    color: var(--texto);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .edicion-campo select:focus,
+  .edicion-campo input:focus { border-color: var(--amarillo); }
+
+  .edicion-full {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-bottom: 0.6rem;
+  }
+  .edicion-full label {
+    font-size: 0.68rem;
+    color: var(--texto-suave);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .edicion-full textarea {
+    padding: 0.5rem 0.7rem;
+    border: 1.5px solid var(--cafe-claro);
+    border-radius: 8px;
+    background: white;
+    color: var(--texto);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    outline: none;
+    resize: vertical;
+    min-height: 60px;
+    transition: border-color 0.2s;
+  }
+  .edicion-full textarea:focus { border-color: var(--amarillo); }
+
+  /* Estrellas editables */
+  .estrellas-editor {
+    display: flex;
+    gap: 0.3rem;
+    align-items: center;
+    margin-bottom: 0.8rem;
+  }
+  .estrellas-editor label {
+    font-size: 0.68rem;
+    color: var(--texto-suave);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-right: 0.3rem;
+  }
+  .estrella-btn {
+    background: none;
+    border: none;
+    font-size: 1.3rem;
+    cursor: pointer;
+    color: var(--cafe-claro);
+    transition: color 0.15s, transform 0.1s;
+    padding: 0;
+    line-height: 1;
+  }
+  .estrella-btn:hover, .estrella-btn.activa { color: var(--amarillo); }
+  .estrella-btn:hover { transform: scale(1.2); }
+  .calificacion-valor {
+    font-size: 0.8rem;
+    color: var(--texto-suave);
+    margin-left: 0.3rem;
+  }
+
+  .btn-guardar {
+    width: 100%;
+    padding: 0.6rem;
+    background: var(--cafe);
+    color: var(--crema);
+    border: none;
+    border-radius: 10px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+  }
+  .btn-guardar:hover { background: var(--texto); }
+  .btn-guardar:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--cafe);
+    color: var(--crema);
+    padding: 0.7rem 1.4rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    z-index: 999;
+    transition: transform 0.3s ease;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  }
+  .toast.visible { transform: translateX(-50%) translateY(0); }
+  .toast.error { background: #C03958; }
+
+  /* BANNER DRIVE */
+  .banner-drive {
+    background: linear-gradient(135deg, var(--cafe), var(--cafe-medio));
+    color: var(--crema);
+    padding: 0.6rem 2rem;
+    font-size: 0.78rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    justify-content: center;
+  }
+  .banner-drive.oculto { display: none; }
+
   /* RESPONSIVE */
   @media (max-width: 600px) {
     header { padding: 1rem; }
@@ -472,8 +678,11 @@
     .grid-libros { padding: 1rem; grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); gap: 0.8rem; }
     .stats-header { gap: 0.8rem; }
     .stat-num { font-size: 1.1rem; }
+    .edicion-grid { grid-template-columns: 1fr; }
+    .usuario-nombre { display: none; }
   }
 </style>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 
@@ -485,21 +694,31 @@
       <span>Mi Biblioteca</span>
     </div>
   </div>
-  <div class="stats-header">
-    <div class="stat">
-      <div class="stat-num" id="total-libros">0</div>
-      <div class="stat-label">Total</div>
+  <div style="display:flex;align-items:center;gap:1.2rem">
+    <div class="stats-header">
+      <div class="stat">
+        <div class="stat-num" id="total-libros">0</div>
+        <div class="stat-label">Total</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num" id="total-leidos">0</div>
+        <div class="stat-label">Leídos</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num" id="total-pendientes">0</div>
+        <div class="stat-label">Por leer</div>
+      </div>
     </div>
-    <div class="stat">
-      <div class="stat-num" id="total-leidos">0</div>
-      <div class="stat-label">Leídos</div>
-    </div>
-    <div class="stat">
-      <div class="stat-num" id="total-pendientes">0</div>
-      <div class="stat-label">Por leer</div>
+    <!-- Zona de autenticación -->
+    <div id="zona-auth">
+      <button class="btn-login" onclick="iniciarLogin()">☁️ Guardar en Drive</button>
     </div>
   </div>
 </header>
+
+<div class="banner-drive oculto" id="banner-drive">
+  ☁️ Conectada a Google Drive — los cambios se guardan automáticamente
+</div>
 
 <div class="controles">
   <div class="buscador">
@@ -522,6 +741,8 @@
 <div class="overlay" id="overlay" onclick="cerrarModal(event)">
   <div class="modal" id="modal"></div>
 </div>
+
+<div id="toast" class="toast"></div>
 
 <script>
 const CATEGORIAS_COLORES = {
@@ -898,7 +1119,8 @@ function abrirModal(id) {
         <h4>💛 Frases favoritas</h4>
         <p class="contenido">${l.frases}</p>
       </div>` : ''}
-    </div>`;
+    </div>
+    ${panelEdicion(l)}`;
   
   document.getElementById('overlay').classList.add('abierto');
   document.body.style.overflow = 'hidden';
@@ -917,6 +1139,287 @@ function cerrarModal(e) {
 }
 
 document.addEventListener('keydown', e => { if(e.key === 'Escape') cerrarModal(); });
+
+// ============================================================
+// GOOGLE DRIVE INTEGRATION
+// ============================================================
+const CLIENT_ID = '718752505682-p3sisnqnshbt9u6kbkdgnrgs57g7r4uf.apps.googleusercontent.com';
+const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+const NOMBRE_ARCHIVO = 'cultura-hadaluna-libros.json';
+
+let tokenAcceso = null;
+let archivoId = null;
+let usuarioNombre = '';
+let calificacionEditando = null;
+
+// ---- LOGIN ----
+function iniciarLogin() {
+  const client = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: SCOPES,
+    callback: async (resp) => {
+      if (resp.error) { mostrarToast('Error al conectar con Google', true); return; }
+      tokenAcceso = resp.access_token;
+      await obtenerNombreUsuario();
+      mostrarUsuarioConectado();
+      await cargarDesdeDrive();
+    }
+  });
+  client.requestAccessToken();
+}
+
+async function obtenerNombreUsuario() {
+  try {
+    const r = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: `Bearer ${tokenAcceso}` }
+    });
+    const d = await r.json();
+    usuarioNombre = d.given_name || d.name || 'HadaLuna';
+  } catch { usuarioNombre = 'HadaLuna'; }
+}
+
+function mostrarUsuarioConectado() {
+  document.getElementById('zona-auth').innerHTML = `
+    <div class="usuario-info">
+      <span class="usuario-nombre">✨ ${usuarioNombre}</span>
+      <button class="btn-logout" onclick="cerrarSesion()">Desconectar</button>
+    </div>`;
+  document.getElementById('banner-drive').classList.remove('oculto');
+}
+
+function cerrarSesion() {
+  tokenAcceso = null;
+  archivoId = null;
+  document.getElementById('zona-auth').innerHTML = `<button class="btn-login" onclick="iniciarLogin()">☁️ Guardar en Drive</button>`;
+  document.getElementById('banner-drive').classList.add('oculto');
+  mostrarToast('Sesión cerrada');
+}
+
+// ---- DRIVE: BUSCAR O CREAR ARCHIVO ----
+async function buscarArchivoDrive() {
+  const r = await fetch(
+    `https://www.googleapis.com/drive/v3/files?q=name='${NOMBRE_ARCHIVO}' and trashed=false&fields=files(id,name)`,
+    { headers: { Authorization: `Bearer ${tokenAcceso}` } }
+  );
+  const d = await r.json();
+  return d.files && d.files.length > 0 ? d.files[0].id : null;
+}
+
+async function cargarDesdeDrive() {
+  mostrarToast('Cargando desde Drive...');
+  archivoId = await buscarArchivoDrive();
+  
+  if (archivoId) {
+    // Leer el archivo
+    const r = await fetch(
+      `https://www.googleapis.com/drive/v3/files/${archivoId}?alt=media`,
+      { headers: { Authorization: `Bearer ${tokenAcceso}` } }
+    );
+    const datos = await r.json();
+    if (datos && datos.libros && datos.libros.length > 0) {
+      // Reemplazar los datos hardcodeados con los de Drive
+      LIBROS.length = 0;
+      datos.libros.forEach(l => LIBROS.push(l));
+      actualizarStats();
+      renderCategorias();
+      renderLibros();
+      mostrarToast(`✅ ${LIBROS.length} libros cargados desde Drive`);
+    } else {
+      // Archivo existe pero está vacío — guardar los datos actuales
+      await guardarEnDrive();
+      mostrarToast('✅ Biblioteca sincronizada con Drive');
+    }
+  } else {
+    // Crear archivo nuevo con los datos actuales
+    await guardarEnDrive();
+    mostrarToast('✅ Biblioteca guardada en Drive por primera vez');
+  }
+}
+
+async function guardarEnDrive() {
+  const datos = JSON.stringify({ version: 1, libros: LIBROS }, null, 2);
+  const blob = new Blob([datos], { type: 'application/json' });
+
+  if (archivoId) {
+    // Actualizar archivo existente
+    await fetch(
+      `https://www.googleapis.com/upload/drive/v3/files/${archivoId}?uploadType=media`,
+      {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${tokenAcceso}`,
+          'Content-Type': 'application/json'
+        },
+        body: blob
+      }
+    );
+  } else {
+    // Crear archivo nuevo
+    const meta = { name: NOMBRE_ARCHIVO, mimeType: 'application/json' };
+    const form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify(meta)], { type: 'application/json' }));
+    form.append('file', blob);
+    
+    const r = await fetch(
+      'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${tokenAcceso}` },
+        body: form
+      }
+    );
+    const d = await r.json();
+    archivoId = d.id;
+  }
+}
+
+// ---- EDICIÓN DE LIBROS ----
+function panelEdicion(l) {
+  if (!tokenAcceso) return '';
+  
+  const estados = ['Quiero leer', 'Leyendo', 'Leído'];
+  const cal = l.calificacion || 0;
+  
+  return `
+  <div class="modal-edicion">
+    <h4>✏️ Editar este libro</h4>
+    
+    <!-- Estado -->
+    <div class="edicion-grid">
+      <div class="edicion-campo">
+        <label>Estado de lectura</label>
+        <select id="edit-estado-${l.id}" onchange="actualizarCampo(${l.id}, 'estado', this.value)">
+          ${estados.map(e => `<option value="${e}" ${l.estado===e?'selected':''}>${e}</option>`).join('')}
+        </select>
+      </div>
+      <div class="edicion-campo">
+        <label>Páginas</label>
+        <input type="number" id="edit-paginas-${l.id}" value="${l.paginas||''}" placeholder="—"
+          onchange="actualizarCampo(${l.id}, 'paginas', this.value ? parseInt(this.value) : null)">
+      </div>
+      <div class="edicion-campo">
+        <label>Fecha inicio</label>
+        <input type="date" id="edit-inicio-${l.id}" value="${l.fechaInicio||''}"
+          onchange="actualizarCampo(${l.id}, 'fechaInicio', this.value)">
+      </div>
+      <div class="edicion-campo">
+        <label>Fecha fin</label>
+        <input type="date" id="edit-fin-${l.id}" value="${l.fechaFin||''}"
+          onchange="actualizarCampo(${l.id}, 'fechaFin', this.value)">
+      </div>
+    </div>
+
+    <!-- Calificación -->
+    <div class="estrellas-editor">
+      <label>Calificación</label>
+      ${[1,2,3,4,5].map(n => `
+        <button class="estrella-btn ${cal >= n ? 'activa' : ''}" 
+          id="estrella-${l.id}-${n}"
+          onclick="setCalificacion(${l.id}, ${n})"
+          onmouseover="previewEstrellas(${l.id}, ${n})"
+          onmouseout="restaurarEstrellas(${l.id})">★</button>
+      `).join('')}
+      <span class="calificacion-valor" id="cal-val-${l.id}">${cal ? cal+'/5' : 'Sin calificar'}</span>
+    </div>
+
+    <!-- Análisis -->
+    <div class="edicion-full">
+      <label>Mi análisis personal</label>
+      <textarea id="edit-analisis-${l.id}" placeholder="Escribe tu análisis aquí...">${l.analisis||''}</textarea>
+    </div>
+
+    <!-- Frases -->
+    <div class="edicion-full">
+      <label>Frases favoritas</label>
+      <textarea id="edit-frases-${l.id}" placeholder="Escribe tus frases favoritas...">${l.frases||''}</textarea>
+    </div>
+
+    <button class="btn-guardar" id="btn-guardar-${l.id}" onclick="guardarLibro(${l.id})">
+      💾 Guardar cambios
+    </button>
+  </div>`;
+}
+
+function previewEstrellas(id, n) {
+  for (let i = 1; i <= 5; i++) {
+    const btn = document.getElementById(`estrella-${id}-${i}`);
+    if (btn) btn.style.color = i <= n ? 'var(--amarillo)' : 'var(--cafe-claro)';
+  }
+}
+
+function restaurarEstrellas(id) {
+  const l = LIBROS.find(b => b.id === id);
+  if (!l) return;
+  const cal = calificacionEditando !== null ? calificacionEditando : (l.calificacion || 0);
+  for (let i = 1; i <= 5; i++) {
+    const btn = document.getElementById(`estrella-${id}-${i}`);
+    if (btn) btn.style.color = i <= cal ? 'var(--amarillo)' : 'var(--cafe-claro)';
+  }
+}
+
+function setCalificacion(id, n) {
+  calificacionEditando = n;
+  for (let i = 1; i <= 5; i++) {
+    const btn = document.getElementById(`estrella-${id}-${i}`);
+    if (btn) {
+      btn.classList.toggle('activa', i <= n);
+      btn.style.color = i <= n ? 'var(--amarillo)' : 'var(--cafe-claro)';
+    }
+  }
+  const valEl = document.getElementById(`cal-val-${id}`);
+  if (valEl) valEl.textContent = n + '/5';
+}
+
+function actualizarCampo(id, campo, valor) {
+  const l = LIBROS.find(b => b.id === id);
+  if (l) l[campo] = valor;
+}
+
+async function guardarLibro(id) {
+  const l = LIBROS.find(b => b.id === id);
+  if (!l) return;
+
+  // Recoger valores del formulario
+  const estadoEl = document.getElementById(`edit-estado-${id}`);
+  const paginasEl = document.getElementById(`edit-paginas-${id}`);
+  const inicioEl = document.getElementById(`edit-inicio-${id}`);
+  const finEl = document.getElementById(`edit-fin-${id}`);
+  const analisisEl = document.getElementById(`edit-analisis-${id}`);
+  const frasesEl = document.getElementById(`edit-frases-${id}`);
+
+  if (estadoEl) l.estado = estadoEl.value;
+  if (paginasEl) l.paginas = paginasEl.value ? parseInt(paginasEl.value) : null;
+  if (inicioEl) l.fechaInicio = inicioEl.value;
+  if (finEl) l.fechaFin = finEl.value;
+  if (analisisEl) l.analisis = analisisEl.value;
+  if (frasesEl) l.frases = frasesEl.value;
+  if (calificacionEditando !== null) l.calificacion = calificacionEditando;
+
+  const btn = document.getElementById(`btn-guardar-${id}`);
+  if (btn) { btn.disabled = true; btn.textContent = '💾 Guardando...'; }
+
+  try {
+    await guardarEnDrive();
+    mostrarToast('✅ Cambios guardados en Drive');
+    calificacionEditando = null;
+    // Refrescar la tarjeta en el grid
+    actualizarStats();
+    renderLibros();
+  } catch(e) {
+    mostrarToast('Error al guardar. Intenta de nuevo.', true);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '💾 Guardar cambios'; }
+  }
+}
+
+// ---- TOAST ----
+function mostrarToast(msg, error = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (error ? ' error' : '');
+  t.classList.add('visible');
+  setTimeout(() => t.classList.remove('visible'), 3000);
+}
 
 init();
 </script>
