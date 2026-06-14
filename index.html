@@ -302,15 +302,18 @@
   .tarjeta-cats {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.3rem;
-    margin-bottom: 0.5rem;
+    gap: 0.25rem;
+    margin-bottom: 0.4rem;
+    max-height: 3.2rem;
+    overflow: hidden;
   }
 
   .cat-mini {
-    padding: 0.15rem 0.4rem;
+    padding: 0.12rem 0.35rem;
     border-radius: 6px;
-    font-size: 0.62rem;
+    font-size: 0.58rem;
     font-weight: 500;
+    white-space: nowrap;
   }
 
   .estrellas {
@@ -829,6 +832,11 @@
     <button class="filtro-btn" onclick="filtrarEstado('Leyendo', this)">📖 Leyendo</button>
     <button class="filtro-btn" onclick="filtrarEstado('Quiero leer', this)">🔖 Quiero leer</button>
   </div>
+  <select id="orden-select" onchange="cambiarOrden(this.value)" style="padding:0.4rem 0.7rem;border:1.5px solid var(--cafe-claro);border-radius:15px;background:var(--crema);color:var(--texto-suave);font-family:'Inter',sans-serif;font-size:0.78rem;outline:none;cursor:pointer;">
+    <option value="titulo">A→Z Título</option>
+    <option value="autor">A→Z Autor</option>
+    <option value="estrellas">⭐ Estrellas</option>
+  </select>
 </div>
 
 <div class="controles" style="padding-top:0.5rem;padding-bottom:0.7rem;gap:0.4rem;">
@@ -999,6 +1007,7 @@ const LIBROS = [
 let filtroEstado = 'todos';
 let filtroCategoria = 'Todas';
 let filtroFormato = 'todos';
+let ordenActual = 'titulo';
 let textoBusqueda = '';
 
 // Inicializar
@@ -1058,8 +1067,13 @@ function filtrarCat(cat, el) {
   renderLibros();
 }
 
+function cambiarOrden(valor) {
+  ordenActual = valor;
+  renderLibros();
+}
+
 function librosFiltrados() {
-  return LIBROS.filter(l => {
+  let libros = LIBROS.filter(l => {
     const matchEstado = filtroEstado === 'todos' || l.estado === filtroEstado;
     const matchCat = filtroCategoria === 'Todas' || l.categorias.includes(filtroCategoria);
     const matchBusqueda = !textoBusqueda || 
@@ -1073,6 +1087,16 @@ function librosFiltrados() {
     }
     return matchEstado && matchCat && matchBusqueda && matchFormato;
   });
+
+  // Ordenar
+  libros.sort((a, b) => {
+    if (ordenActual === 'titulo') return a.titulo.localeCompare(b.titulo, 'es');
+    if (ordenActual === 'autor') return a.autor.localeCompare(b.autor, 'es');
+    if (ordenActual === 'estrellas') return (b.calificacion || 0) - (a.calificacion || 0);
+    return 0;
+  });
+
+  return libros;
 }
 
 function renderEstrellas(cal) {
@@ -1190,7 +1214,7 @@ function renderLibros() {
       <div class="tarjeta-body">
         <div class="tarjeta-titulo">${l.titulo}</div>
         <div class="tarjeta-autor">${l.autor}</div>
-        <div class="tarjeta-cats">${l.categorias.slice(0,2).map(catMini).join('')}</div>
+        <div class="tarjeta-cats">${l.categorias.map(catMini).join('')}</div>
         ${l.calificacion ? `<div class="estrellas">${renderEstrellas(l.calificacion)} <span>${l.calificacion}</span></div>` : ''}
       </div>
     </div>`;
