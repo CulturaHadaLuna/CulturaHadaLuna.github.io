@@ -2104,33 +2104,10 @@ async function seleccionarLibro(doc) {
 async function generarResenaConClaude(titulo, autor) {
   document.getElementById('campo-resena').style.display = 'block';
   document.getElementById('campo-diferencial').style.display = 'block';
-  document.getElementById('texto-resena-nueva').value = '⏳ Generando reseña...';
-  document.getElementById('texto-diferencial-nuevo').value = '⏳ Generando...';
-
-  try {
-    const prompt = 'Eres una curadora literaria con voz cálida, inteligente y muy personal. Para el libro "' + titulo + '" de ' + autor + ', escribe exactamente dos cosas:\n\n1. RESEÑA: Una descripción de 2-3 oraciones de qué trata el libro. Debe ser atractiva, específica y con personalidad — no una sinopsis genérica. Menciona el tono, el mundo o la propuesta narrativa.\n\n2. DIFERENCIAL: Una sola oración que capture lo que hace ÚNICO a este libro. Algo que solo este libro tiene. Debe ser memorable y precisa.\n\nResponde SOLO en este formato JSON exacto, sin texto adicional:\n{"resena": "...", "diferencial": "..."}';
-
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 1000,
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
-
-    const data = await res.json();
-    const texto = data.content?.[0]?.text || '{}';
-    const limpio = texto.replace(/```json|```/g, '').trim();
-    const parsed = JSON.parse(limpio);
-    document.getElementById('texto-resena-nueva').value = parsed.resena || '';
-    document.getElementById('texto-diferencial-nuevo').value = parsed.diferencial || '';
-  } catch(e) {
-    document.getElementById('texto-resena-nueva').value = '';
-    document.getElementById('texto-resena-nueva').placeholder = 'No se pudo generar. Escribe tu reseña aquí...';
-    document.getElementById('texto-diferencial-nuevo').value = '';
-  }
+  document.getElementById('texto-resena-nueva').value = '';
+  document.getElementById('texto-resena-nueva').placeholder = 'Pega aquí la reseña...';
+  document.getElementById('texto-diferencial-nuevo').value = '';
+  document.getElementById('texto-diferencial-nuevo').placeholder = 'Pega aquí lo que lo hace especial...';
 }
 
 async function agregarLibroFinal() {
