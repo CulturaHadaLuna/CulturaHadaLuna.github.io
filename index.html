@@ -862,6 +862,33 @@
   }
   .btn-nuevo-libro:hover { background: #5a8a5e; transform: translateY(-1px); }
 
+  /* RESULTADOS BÚSQUEDA OPEN LIBRARY */
+  .resultado-libro {
+    display: flex;
+    gap: 0.8rem;
+    align-items: center;
+    padding: 0.7rem;
+    border: 1.5px solid var(--crema-oscuro);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: white;
+  }
+  .resultado-libro:hover { border-color: var(--amarillo); background: var(--crema); }
+  .resultado-portada-mini {
+    width: 40px; height: 56px; border-radius: 4px;
+    object-fit: cover; flex-shrink: 0; background: var(--crema-oscuro);
+  }
+  .resultado-info { flex: 1; }
+  .resultado-titulo { font-size: 0.85rem; font-weight: 600; color: var(--texto); line-height: 1.2; }
+  .resultado-autor { font-size: 0.75rem; color: var(--texto-suave); margin-top: 0.15rem; }
+  .resultado-meta { font-size: 0.68rem; color: var(--cafe-claro); margin-top: 0.15rem; }
+  .resultado-elegir {
+    font-size: 0.7rem; color: var(--amarillo); font-weight: 600;
+    white-space: nowrap; padding: 0.3rem 0.6rem;
+    border: 1.5px solid var(--amarillo); border-radius: 8px;
+  }
+
   .toast {
     position: fixed;
     bottom: 1.5rem;
@@ -999,12 +1026,18 @@
       <div class="campo-busqueda-libro">
         <input type="text" id="input-titulo-nuevo" placeholder="Título del libro..." 
           onkeydown="if(event.key==='Enter') buscarLibroNuevo()">
-        <input type="text" id="input-autor-nuevo" placeholder="Autor..." style="max-width:140px"
+        <input type="text" id="input-autor-nuevo" placeholder="Autor (opcional)..." style="max-width:150px"
           onkeydown="if(event.key==='Enter') buscarLibroNuevo()">
         <button class="btn-buscar-libro" id="btn-buscar" onclick="buscarLibroNuevo()">Buscar</button>
       </div>
 
-      <!-- Preview portada + datos Google Books -->
+      <!-- Resultados de búsqueda para elegir -->
+      <div id="resultados-busqueda" style="display:none; margin-bottom:1rem;">
+        <p style="font-size:0.72rem;color:var(--texto-suave);margin-bottom:0.5rem;font-weight:500">Elige el libro correcto:</p>
+        <div id="lista-resultados" style="display:flex;flex-direction:column;gap:0.5rem;"></div>
+      </div>
+
+      <!-- Preview del libro seleccionado -->
       <div class="preview-libro-nuevo" id="preview-nuevo">
         <img class="preview-portada-nueva" id="preview-img-nueva" src="" alt="">
         <div class="preview-info-nueva">
@@ -1026,7 +1059,7 @@
         <textarea id="texto-diferencial-nuevo" rows="2"></textarea>
       </div>
 
-      <!-- Estado + Categorías -->
+      <!-- Estado + Formato + Botones -->
       <div id="campos-extra" style="display:none">
         <div class="edicion-grid" style="grid-template-columns:1fr 1fr;gap:0.6rem;margin-bottom:0.8rem">
           <div class="edicion-campo">
@@ -1039,7 +1072,7 @@
           </div>
           <div class="edicion-campo">
             <label style="font-size:0.68rem;color:var(--texto-suave);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:0.3rem">Formato</label>
-            <div class="formato-chips" id="nuevo-formato-chips">
+            <div class="formato-chips">
               <label class="formato-chip" id="chip-nuevo-EPUB"><input type="checkbox" value="EPUB" onchange="toggleFormatoNuevo('EPUB',this.checked)">EPUB</label>
               <label class="formato-chip" id="chip-nuevo-Físico"><input type="checkbox" value="Físico" onchange="toggleFormatoNuevo('Físico',this.checked)">Físico</label>
               <label class="formato-chip" id="chip-nuevo-PDF"><input type="checkbox" value="PDF" onchange="toggleFormatoNuevo('PDF',this.checked)">PDF</label>
@@ -1047,8 +1080,20 @@
             </div>
           </div>
         </div>
-        <button class="btn-agregar-final" id="btn-agregar-final" onclick="agregarLibroFinal()">
-          ✅ Agregar a mi biblioteca
+        <div style="display:flex;gap:0.6rem;">
+          <button onclick="cerrarModalAgregar()" style="flex:1;padding:0.7rem;background:transparent;color:var(--texto-suave);border:1.5px solid var(--cafe-claro);border-radius:10px;font-family:'Inter',sans-serif;font-size:0.85rem;cursor:pointer;">
+            Cancelar
+          </button>
+          <button class="btn-agregar-final" id="btn-agregar-final" onclick="agregarLibroFinal()" style="flex:2;margin-top:0">
+            ✅ Agregar a mi biblioteca
+          </button>
+        </div>
+      </div>
+
+      <!-- Botón cancelar siempre visible si hay búsqueda activa -->
+      <div id="btn-cancelar-wrap" style="display:none;margin-top:0.5rem;">
+        <button onclick="resetModalAgregar()" style="width:100%;padding:0.5rem;background:transparent;color:var(--texto-suave);border:1.5px solid var(--cafe-claro);border-radius:10px;font-family:'Inter',sans-serif;font-size:0.82rem;cursor:pointer;">
+          ↩ Nueva búsqueda
         </button>
       </div>
 
@@ -1744,8 +1789,12 @@ function panelEdicion(l) {
     (portadaActual ? '' : '<br>Toca para elegir una imagen') +
     '</div></div></div>' +
 
-    // Botón guardar
+    // Botón guardar + eliminar
     '<button class="btn-guardar" id="btn-guardar-' + lid + '" onclick="guardarLibro(' + lid + ')">💾 Guardar cambios</button>' +
+    '<button id="btn-eliminar-' + lid + '" onclick="confirmarEliminar(' + lid + ')" data-confirmando="false" ' +
+    'style="width:100%;margin-top:0.5rem;padding:0.5rem;background:transparent;color:var(--texto-suave);' +
+    'border:1.5px solid var(--cafe-claro);border-radius:10px;font-family:\'Inter\',sans-serif;font-size:0.8rem;cursor:pointer;transition:all 0.2s">' +
+    '🗑️ Eliminar libro</button>' +
     '</div></div>';
 }
 
@@ -1922,15 +1971,26 @@ let formatosNuevos = [];
 function abrirModalAgregar() {
   document.getElementById('overlay-agregar').classList.add('abierto');
   document.body.style.overflow = 'hidden';
-  // Limpiar
+  resetModalAgregar();
+}
+
+function resetModalAgregar() {
   document.getElementById('input-titulo-nuevo').value = '';
   document.getElementById('input-autor-nuevo').value = '';
+  document.getElementById('resultados-busqueda').style.display = 'none';
+  document.getElementById('lista-resultados').innerHTML = '';
   document.getElementById('preview-nuevo').classList.remove('visible');
   document.getElementById('campo-resena').style.display = 'none';
   document.getElementById('campo-diferencial').style.display = 'none';
   document.getElementById('campos-extra').style.display = 'none';
+  document.getElementById('btn-cancelar-wrap').style.display = 'none';
   libroNuevoTemp = {};
   formatosNuevos = [];
+  // reset chips formato
+  ['EPUB','Físico','PDF','Audiolibro'].forEach(f => {
+    const chip = document.getElementById('chip-nuevo-' + f);
+    if (chip) { chip.classList.remove('seleccionado'); chip.querySelector('input').checked = false; }
+  });
 }
 
 function cerrarModalAgregar(e) {
@@ -1955,60 +2015,100 @@ async function buscarLibroNuevo() {
   const btn = document.getElementById('btn-buscar');
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span>Buscando...';
+  document.getElementById('resultados-busqueda').style.display = 'none';
+  document.getElementById('preview-nuevo').classList.remove('visible');
+  document.getElementById('campo-resena').style.display = 'none';
+  document.getElementById('campo-diferencial').style.display = 'none';
+  document.getElementById('campos-extra').style.display = 'none';
 
   try {
-    // 1. Google Books: páginas + portada
+    // Open Library search
     const q = encodeURIComponent(titulo + (autor ? ' ' + autor : ''));
-    const gbRes = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=1&fields=items(volumeInfo(title,authors,pageCount,imageLinks))`);
-    const gbData = await gbRes.json();
-    const info = gbData?.items?.[0]?.volumeInfo || {};
+    const res = await fetch('https://openlibrary.org/search.json?q=' + q + '&limit=4&fields=key,title,author_name,number_of_pages_median,cover_i,first_publish_year');
+    const data = await res.json();
+    const docs = data.docs || [];
 
-    const tituloFinal = info.title || titulo;
-    const autorFinal = (info.authors || [autor || 'Autor desconocido'])[0];
-    const paginas = info.pageCount || null;
-    const portadaUrl = info.imageLinks?.thumbnail?.replace('http://', 'https://').replace('zoom=1', 'zoom=2') || 
-                       `https://covers.openlibrary.org/b/title/${encodeURIComponent(titulo)}-M.jpg`;
+    if (docs.length === 0) {
+      mostrarToast('No encontré ese libro. Intenta con otro título.', true);
+      btn.disabled = false; btn.textContent = 'Buscar';
+      return;
+    }
 
-    libroNuevoTemp = { titulo: tituloFinal, autor: autorFinal, paginas, portadaUrl };
+    // Mostrar resultados para elegir
+    const lista = document.getElementById('lista-resultados');
+    lista.innerHTML = '';
+    docs.slice(0, 4).forEach((doc, i) => {
+      const portada = doc.cover_i 
+        ? 'https://covers.openlibrary.org/b/id/' + doc.cover_i + '-S.jpg'
+        : '';
+      const autorDoc = (doc.author_name || [''])[0];
+      const paginas = doc.number_of_pages_median || '';
+      const anio = doc.first_publish_year || '';
 
-    // Mostrar preview
-    document.getElementById('preview-titulo-nuevo').textContent = tituloFinal;
-    document.getElementById('preview-autor-nuevo').textContent = autorFinal;
-    document.getElementById('preview-paginas-nuevo').textContent = paginas ? paginas + ' páginas' : '';
-    const imgEl = document.getElementById('preview-img-nueva');
-    imgEl.src = portadaUrl;
-    imgEl.onerror = () => { imgEl.src = ''; imgEl.style.background = 'var(--cafe-claro)'; };
-    document.getElementById('preview-nuevo').classList.add('visible');
+      const card = document.createElement('div');
+      card.className = 'resultado-libro';
+      card.innerHTML = 
+        (portada ? '<img class="resultado-portada-mini" src="' + portada + '" onerror="this.style.display=\'none\'">' : '<div class="resultado-portada-mini"></div>') +
+        '<div class="resultado-info">' +
+          '<div class="resultado-titulo">' + doc.title + '</div>' +
+          '<div class="resultado-autor">' + autorDoc + '</div>' +
+          '<div class="resultado-meta">' + (paginas ? paginas + ' pág.' : '') + (anio ? (paginas ? ' · ' : '') + anio : '') + '</div>' +
+        '</div>' +
+        '<span class="resultado-elegir">Elegir →</span>';
+      card.onclick = () => seleccionarLibro(doc);
+      lista.appendChild(card);
+    });
 
-    // 2. Claude: generar reseña y diferencial
-    btn.innerHTML = '<span class="spinner"></span>Generando reseña...';
-    await generarResenaConClaude(tituloFinal, autorFinal);
-
-    document.getElementById('campos-extra').style.display = 'block';
+    document.getElementById('resultados-busqueda').style.display = 'block';
+    document.getElementById('btn-cancelar-wrap').style.display = 'block';
 
   } catch(err) {
-    mostrarToast('Error buscando el libro. Intenta de nuevo.', true);
+    mostrarToast('Error buscando. Intenta de nuevo.', true);
   } finally {
     btn.disabled = false;
     btn.textContent = 'Buscar';
   }
 }
 
+async function seleccionarLibro(doc) {
+  // Ocultar resultados
+  document.getElementById('resultados-busqueda').style.display = 'none';
+
+  const titulo = doc.title;
+  const autor = (doc.author_name || ['Autor desconocido'])[0];
+  const paginas = doc.number_of_pages_median || null;
+  const portadaUrl = doc.cover_i 
+    ? 'https://covers.openlibrary.org/b/id/' + doc.cover_i + '-M.jpg'
+    : '';
+
+  libroNuevoTemp = { titulo, autor, paginas, portadaUrl };
+
+  // Mostrar preview
+  document.getElementById('preview-titulo-nuevo').textContent = titulo;
+  document.getElementById('preview-autor-nuevo').textContent = autor;
+  document.getElementById('preview-paginas-nuevo').textContent = paginas ? paginas + ' páginas' : '';
+  const imgEl = document.getElementById('preview-img-nueva');
+  if (portadaUrl) {
+    imgEl.src = portadaUrl;
+    imgEl.style.display = 'block';
+  } else {
+    imgEl.style.display = 'none';
+  }
+  document.getElementById('preview-nuevo').classList.add('visible');
+
+  // Generar reseña con Claude
+  await generarResenaConClaude(titulo, autor);
+  document.getElementById('campos-extra').style.display = 'block';
+}
+
 async function generarResenaConClaude(titulo, autor) {
   document.getElementById('campo-resena').style.display = 'block';
   document.getElementById('campo-diferencial').style.display = 'block';
-  document.getElementById('texto-resena-nueva').value = '⏳ Generando...';
+  document.getElementById('texto-resena-nueva').value = '⏳ Generando reseña...';
   document.getElementById('texto-diferencial-nuevo').value = '⏳ Generando...';
 
   try {
-    const prompt = `Eres una curadora literaria con voz cálida, inteligente y muy personal. Para el libro "${titulo}" de ${autor}, escribe exactamente dos cosas:
-
-1. RESEÑA: Una descripción de 2-3 oraciones de qué trata el libro. Debe ser atractiva, específica y con personalidad — no una sinopsis genérica. Menciona el tono, el mundo o la propuesta narrativa.
-
-2. DIFERENCIAL: Una sola oración que capture lo que hace ÚNICO a este libro. Algo que solo este libro tiene. Debe ser memorable y precisa.
-
-Responde SOLO en este formato JSON exacto, sin texto adicional:
-{"resena": "...", "diferencial": "..."}`;
+    const prompt = 'Eres una curadora literaria con voz cálida, inteligente y muy personal. Para el libro "' + titulo + '" de ' + autor + ', escribe exactamente dos cosas:\n\n1. RESEÑA: Una descripción de 2-3 oraciones de qué trata el libro. Debe ser atractiva, específica y con personalidad — no una sinopsis genérica. Menciona el tono, el mundo o la propuesta narrativa.\n\n2. DIFERENCIAL: Una sola oración que capture lo que hace ÚNICO a este libro. Algo que solo este libro tiene. Debe ser memorable y precisa.\n\nResponde SOLO en este formato JSON exacto, sin texto adicional:\n{"resena": "...", "diferencial": "..."}';
 
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -2024,13 +2124,12 @@ Responde SOLO en este formato JSON exacto, sin texto adicional:
     const texto = data.content?.[0]?.text || '{}';
     const limpio = texto.replace(/```json|```/g, '').trim();
     const parsed = JSON.parse(limpio);
-
     document.getElementById('texto-resena-nueva').value = parsed.resena || '';
     document.getElementById('texto-diferencial-nuevo').value = parsed.diferencial || '';
   } catch(e) {
     document.getElementById('texto-resena-nueva').value = '';
-    document.getElementById('texto-diferencial-nuevo').value = '';
     document.getElementById('texto-resena-nueva').placeholder = 'No se pudo generar. Escribe tu reseña aquí...';
+    document.getElementById('texto-diferencial-nuevo').value = '';
   }
 }
 
@@ -2048,13 +2147,11 @@ async function agregarLibroFinal() {
     estado: document.getElementById('nuevo-estado').value,
     formato: formatosNuevos.length > 0 ? formatosNuevos : ['EPUB'],
     calificacion: null,
-    fechaInicio: '',
-    fechaFin: '',
+    fechaInicio: '', fechaFin: '',
     categorias: [],
     resena: document.getElementById('texto-resena-nueva').value,
     diferencial: document.getElementById('texto-diferencial-nuevo').value,
-    analisis: '',
-    frases: '',
+    analisis: '', frases: '',
     portadaUrl: libroNuevoTemp.portadaUrl || '',
     loTengo: formatosNuevos.length > 0
   };
@@ -2063,18 +2160,43 @@ async function agregarLibroFinal() {
 
   if (tokenAcceso) {
     await guardarEnDrive();
-    mostrarToast('✅ "' + nuevoLibro.titulo + '" agregado y guardado en Drive');
+    mostrarToast('✅ "' + nuevoLibro.titulo + '" agregado y guardado');
   } else {
-    mostrarToast('✅ "' + nuevoLibro.titulo + '" agregado (inicia sesión para guardarlo)');
+    mostrarToast('✅ "' + nuevoLibro.titulo + '" agregado (inicia sesión para guardar)');
   }
 
   actualizarStats();
   renderCategorias();
   renderLibros();
   cerrarModalAgregar();
-
   btn.disabled = false;
   btn.textContent = '✅ Agregar a mi biblioteca';
+}
+
+// ---- ELIMINAR LIBRO ----
+function confirmarEliminar(id) {
+  const l = LIBROS.find(b => b.id === id);
+  if (!l) return;
+  const btn = document.getElementById('btn-eliminar-' + id);
+  if (btn.dataset.confirmando === 'true') {
+    // Segunda pulsación — eliminar
+    const idx = LIBROS.findIndex(b => b.id === id);
+    if (idx > -1) LIBROS.splice(idx, 1);
+    if (tokenAcceso) guardarEnDrive();
+    actualizarStats();
+    renderCategorias();
+    renderLibros();
+    cerrarModal();
+    mostrarToast('🗑️ "' + l.titulo + '" eliminado');
+  } else {
+    // Primera pulsación — pedir confirmación
+    btn.dataset.confirmando = 'true';
+    btn.textContent = '⚠️ ¿Confirmar eliminación?';
+    btn.style.background = '#C03958';
+    setTimeout(() => {
+      if (btn) { btn.dataset.confirmando = 'false'; btn.textContent = '🗑️ Eliminar libro'; btn.style.background = ''; }
+    }, 3000);
+  }
 }
 
 init();
