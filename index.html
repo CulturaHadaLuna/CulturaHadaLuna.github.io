@@ -1369,6 +1369,13 @@ function librosFiltrados() {
   return libros;
 }
 
+function formatearFecha(fecha) {
+  if (!fecha) return '';
+  const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  const [anio, mes, dia] = fecha.split('-');
+  return dia + '-' + meses[parseInt(mes) - 1] + '-' + anio;
+}
+
 function renderEstrellas(cal) {
   if (!cal) return '';
   const llenas = Math.floor(cal);
@@ -1515,9 +1522,12 @@ function abrirModal(id) {
           ${l.paginas ? `<span class="meta-item">📄 ${l.paginas} pág.</span>` : ''}
           <span class="meta-item">${l.estado}</span>
           ${l.formato.map(f => `<span class="meta-item">${f}</span>`).join('')}
-          ${l.fechaInicio ? `<span class="meta-item">Inicio: ${l.fechaInicio}</span>` : ''}
-          ${l.fechaFin ? `<span class="meta-item">Fin: ${l.fechaFin}</span>` : ''}
         </div>
+        ${(l.fechaInicio || l.fechaFin) ? `<div style="margin-bottom:0.4rem">
+          <span class="meta-item" style="background:rgba(255,255,255,0.1);color:var(--crema);font-size:0.7rem">
+            📅 ${[l.fechaInicio ? formatearFecha(l.fechaInicio) : null, l.fechaFin ? formatearFecha(l.fechaFin) : null].filter(Boolean).join(' → ')}
+          </span>
+        </div>` : ''}
         ${l.calificacion ? `<div class="modal-estrellas">${renderEstrellas(l.calificacion)} ${l.calificacion}/5</div>` : ''}
       </div>
       <button class="modal-close" onclick="cerrarModal()">✕</button>
