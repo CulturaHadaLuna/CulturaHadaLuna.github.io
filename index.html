@@ -781,7 +781,7 @@
     .usuario-nombre { display: none; }
   }
 </style>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://accounts.google.com/gsi/client" onload="console.log('Google GSI cargado')" onerror="console.warn('Error cargando Google GSI')"></script>
 </head>
 <body>
 
@@ -1287,6 +1287,11 @@ let calificacionEditando = null;
 
 // ---- LOGIN ----
 function iniciarLogin() {
+  if (typeof google === 'undefined' || !google.accounts) {
+    mostrarToast('⏳ Cargando Google, intenta en un segundo...');
+    setTimeout(iniciarLogin, 1500);
+    return;
+  }
   const client = google.accounts.oauth2.initTokenClient({
     client_id: CLIENT_ID,
     scope: SCOPES,
@@ -1339,32 +1344,51 @@ async function buscarArchivoDrive() {
 }
 
 async function cargarDesdeDrive() {
-  mostrarToast('Cargando desde Drive...');
+  mostrarToast('Sincronizando con Drive...');
   archivoId = await buscarArchivoDrive();
   
   if (archivoId) {
-    // Leer el archivo
-    const r = await fetch(
-      `https://www.googleapis.com/drive/v3/files/${archivoId}?alt=media`,
-      { headers: { Authorization: `Bearer ${tokenAcceso}` } }
-    );
-    const datos = await r.json();
-    if (datos && datos.libros && datos.libros.length > 0) {
-      // Reemplazar los datos hardcodeados con los de Drive
-      LIBROS.length = 0;
-      datos.libros.forEach(l => LIBROS.push(l));
+    try {
+      const r = await fetch(
+        `https://www.googleapis.com/drive/v3/files/${archivoId}?alt=media`,
+        { headers: { Authorization: `Bearer ${tokenAcceso}` } }
+      );
+      const datos = await r.json();
+      if (datos && datos.libros && datos.libros.length > 0) {
+        // Drive tiene datos — usarlos y fusionar con hardcodeados
+        // Primero tomamos los hardcodeados como base
+        const idsEnDrive = new Set(datos.libros.map(l => l.id));
+        // Agregar libros hardcodeados que no estén en Drive
+        LIBROS.forEach(l => {
+          if (!idsEnDrive.has(l.id)) datos.libros.push(l);
+        });
+        LIBROS.length = 0;
+        datos.libros.forEach(l => LIBROS.push(l));
+        actualizarStats();
+        renderCategorias();
+        renderLibros();
+        mostrarToast(`✅ ${LIBROS.length} libros cargados`);
+      } else {
+        // Drive vacío — guardar los hardcodeados
+        await guardarEnDrive();
+        actualizarStats();
+        renderCategorias();
+        renderLibros();
+        mostrarToast('✅ Biblioteca guardada en Drive');
+      }
+    } catch(e) {
+      // Error leyendo Drive — mostrar hardcodeados igual
+      mostrarToast('⚠️ Error leyendo Drive, mostrando datos locales');
       actualizarStats();
       renderCategorias();
       renderLibros();
-      mostrarToast(`✅ ${LIBROS.length} libros cargados desde Drive`);
-    } else {
-      // Archivo existe pero está vacío — guardar los datos actuales
-      await guardarEnDrive();
-      mostrarToast('✅ Biblioteca sincronizada con Drive');
     }
   } else {
-    // Crear archivo nuevo con los datos actuales
+    // No existe archivo — crear con los hardcodeados
     await guardarEnDrive();
+    actualizarStats();
+    renderCategorias();
+    renderLibros();
     mostrarToast('✅ Biblioteca guardada en Drive por primera vez');
   }
 }
