@@ -1334,6 +1334,7 @@ const CATEGORIAS_COLORES = {
   'Distopia': {bg:'#4A4A4A22', color:'#1A1A1A', border:'#777'},
   'Biography': {bg:'#9E8A5C22', color:'#5E4A1A', border:'#9E8A5C'},
   'LGBTQ+': {bg:'#E8784822', color:'#7A3010', border:'#E87848'},
+  'Lo amé': {bg:'#FF8C0022', color:'#7A3500', border:'#FF8C00'},
 };
 
 const LIBROS = [
@@ -2541,54 +2542,99 @@ async function buscarPorISBN() {
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span>Buscando...';
 
+  let encontrado = false;
+
   try {
-    const res = await fetch('https://openlibrary.org/isbn/' + isbn + '.json');
-    if (!res.ok) throw new Error('No encontrado');
-    const data = await res.json();
-
-    // Obtener título y páginas
-    const titulo = data.title || '';
-    const paginas = data.number_of_pages || null;
-
-    // Obtener autor
-    let autor = 'Autor desconocido';
-    if (data.authors && data.authors.length > 0) {
-      try {
-        const autorKey = data.authors[0].key;
-        const autorRes = await fetch('https://openlibrary.org' + autorKey + '.json');
-        const autorData = await autorRes.json();
-        autor = autorData.name || autor;
-      } catch {}
+    // 1. Intentar Open Library primero
+    const olRes = await fetch('https://openlibrary.org/isbn/' + isbn + '.json');
+    if (olRes.ok) {
+      const data = await olRes.json();
+      const titulo = data.title || '';
+      const paginas = data.number_of_pages || null;
+      let autor = 'Autor desconocido';
+      if (data.authors && data.authors.length > 0) {
+        try {
+          const autorRes = await fetch('https://openlibrary.org' + data.authors[0].key + '.json');
+          const autorData = await autorRes.json();
+          autor = autorData.name || autor;
+        } catch {}
+      }
+      const coverId = data.covers && data.covers[0];
+      const portadaUrl = coverId ? 'https://covers.openlibrary.org/b/id/' + coverId + '-L.jpg' : '';
+      mostrarPreviewLibro(titulo, autor, paginas, portadaUrl);
+      encontrado = true;
     }
+  } catch {}
 
-    // Portada
-    const coverId = data.covers && data.covers[0];
-    const portadaUrl = coverId
-      ? 'https://covers.openlibrary.org/b/id/' + coverId + '-L.jpg'
-      : '';
-
-    libroNuevoTemp = { titulo, autor, paginas, portadaUrl };
-
-    // Mostrar preview directo (sin opciones — ISBN es único)
-    document.getElementById('resultados-busqueda').style.display = 'none';
-    document.getElementById('preview-titulo-nuevo').textContent = titulo;
-    document.getElementById('preview-autor-nuevo').textContent = autor;
-    document.getElementById('preview-paginas-nuevo').textContent = paginas ? paginas + ' páginas' : '';
-    const imgEl = document.getElementById('preview-img-nueva');
-    if (portadaUrl) { imgEl.src = portadaUrl; imgEl.style.display = 'block'; }
-    else { imgEl.style.display = 'none'; }
-    document.getElementById('preview-nuevo').classList.add('visible');
-    document.getElementById('btn-cancelar-wrap').style.display = 'block';
-
-    await generarResenaConClaude(titulo, autor);
-    document.getElementById('campos-extra').style.display = 'block';
-
-  } catch(e) {
-    mostrarToast('No encontré ese ISBN. Verifica el número e intenta de nuevo.', true);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Buscar';
+  // 2. Fallback: Google Books
+  if (!encontrado) {
+    try {
+      const gbRes = await fetch('https://www.googleapis.com/books/v1/volumes?q=isbn:' + isbn + '&fields=items(volumeInfo(title,authors,pageCount,imageLinks))');
+      const gbData = await gbRes.json();
+      const info = gbData?.items?.[0]?.volumeInfo;
+      if (info) {
+        const titulo = info.title || '';
+        const autor = (info.authors || ['Autor desconocido'])[0];
+        const paginas = info.pageCount || null;
+        const thumb = info.imageLinks?.thumbnail;
+        const portadaUrl = thumb ? thumb.replace('http://', 'https://').replace('zoom=1', 'zoom=3').replace('&edge=curl', '') : '';
+        mostrarPreviewLibro(titulo, autor, paginas, portadaUrl);
+        encontrado = true;
+      }
+    } catch {}
   }
+
+  // 3. Si ninguno encuentra: ofrecer ingreso manual
+  if (!encontrado) {
+    mostrarFormularioManual();
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Buscar';
+}
+
+function mostrarPreviewLibro(titulo, autor, paginas, portadaUrl) {
+  libroNuevoTemp = { titulo, autor, paginas, portadaUrl };
+  document.getElementById('resultados-busqueda').style.display = 'none';
+  document.getElementById('preview-titulo-nuevo').textContent = titulo;
+  document.getElementById('preview-autor-nuevo').textContent = autor;
+  document.getElementById('preview-paginas-nuevo').textContent = paginas ? paginas + ' páginas' : '';
+  const imgEl = document.getElementById('preview-img-nueva');
+  if (portadaUrl) { imgEl.src = portadaUrl; imgEl.style.display = 'block'; }
+  else { imgEl.style.display = 'none'; }
+  document.getElementById('preview-nuevo').classList.add('visible');
+  document.getElementById('btn-cancelar-wrap').style.display = 'block';
+  generarResenaConClaude(titulo, autor);
+  document.getElementById('campos-extra').style.display = 'block';
+}
+
+function mostrarFormularioManual() {
+  const contenedor = document.getElementById('lista-resultados');
+  document.getElementById('resultados-busqueda').style.display = 'block';
+  document.getElementById('btn-cancelar-wrap').style.display = 'block';
+  contenedor.innerHTML = `
+    <div style="background:var(--crema-oscuro);border-radius:12px;padding:1rem;margin-bottom:0.5rem">
+      <p style="font-size:0.78rem;color:var(--texto-suave);margin-bottom:0.8rem">
+        No encontré este libro en ninguna fuente. Puedes ingresarlo manualmente:
+      </p>
+      <div style="display:flex;flex-direction:column;gap:0.5rem">
+        <input type="text" id="manual-titulo" placeholder="Título *" style="padding:0.5rem 0.7rem;border:1.5px solid var(--cafe-claro);border-radius:8px;font-family:'Inter',sans-serif;font-size:0.82rem;color:var(--texto);background:white;outline:none">
+        <input type="text" id="manual-autor" placeholder="Autor *" style="padding:0.5rem 0.7rem;border:1.5px solid var(--cafe-claro);border-radius:8px;font-family:'Inter',sans-serif;font-size:0.82rem;color:var(--texto);background:white;outline:none">
+        <input type="number" id="manual-paginas" placeholder="Páginas (opcional)" style="padding:0.5rem 0.7rem;border:1.5px solid var(--cafe-claro);border-radius:8px;font-family:'Inter',sans-serif;font-size:0.82rem;color:var(--texto);background:white;outline:none">
+        <button onclick="confirmarManual()" style="padding:0.5rem;background:var(--cafe);color:var(--crema);border:none;border-radius:8px;font-family:'Inter',sans-serif;font-size:0.82rem;font-weight:600;cursor:pointer">
+          Continuar con estos datos →
+        </button>
+      </div>
+    </div>`;
+}
+
+function confirmarManual() {
+  const titulo = document.getElementById('manual-titulo')?.value.trim();
+  const autor = document.getElementById('manual-autor')?.value.trim();
+  const paginas = parseInt(document.getElementById('manual-paginas')?.value) || null;
+  if (!titulo || !autor) { mostrarToast('Título y autor son obligatorios', true); return; }
+  mostrarPreviewLibro(titulo, autor, paginas, '');
+  document.getElementById('resultados-busqueda').style.display = 'none';
 }
 
 async function buscarLibroNuevo() {
@@ -2652,7 +2698,10 @@ async function buscarLibroNuevo() {
     }
 
     if (resultados.length === 0) {
-      mostrarToast('No encontré ese libro en ninguna fuente. Intenta con el ISBN.', true);
+      mostrarToast('No encontré ese libro. Intenta con el ISBN o ingresa manualmente.', true);
+      mostrarFormularioManual();
+      document.getElementById('resultados-busqueda').style.display = 'block';
+      document.getElementById('btn-cancelar-wrap').style.display = 'block';
       btn.disabled = false; btn.textContent = 'Buscar';
       return;
     }
