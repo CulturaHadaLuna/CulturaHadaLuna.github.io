@@ -942,6 +942,70 @@
   /* BANNER DRIVE — oculto, reemplazado por pill en header */
   .banner-drive { display: none !important; }
 
+  /* TOGGLE VISTA */
+  .vista-btns {
+    display: flex; gap: 0.2rem; align-items: center;
+    border: 1.5px solid var(--cafe-claro); border-radius: 22px;
+    padding: 0.15rem; background: var(--crema); flex-shrink: 0;
+  }
+  .vista-btn {
+    width: 28px; height: 28px; border: none; background: transparent;
+    border-radius: 18px; cursor: pointer; display: flex;
+    align-items: center; justify-content: center;
+    color: var(--texto-suave); font-size: 0.9rem; transition: all 0.2s;
+  }
+  .vista-btn.activo { background: var(--cafe); color: var(--crema); }
+  .vista-btn:hover:not(.activo) { background: var(--crema-oscuro); }
+
+  /* VISTA LISTA */
+  .lista-libros { padding: 1rem 2rem; max-width: 1400px; margin: 0 auto; }
+  .lista-header {
+    display: grid;
+    grid-template-columns: 44px 1fr 110px 90px 90px 140px 95px 32px;
+    gap: 0.5rem; padding: 0.3rem 0.8rem;
+    border-bottom: 2px solid var(--cafe-claro); margin-bottom: 0.2rem;
+  }
+  .lista-header span {
+    font-size: 0.6rem; color: var(--texto-suave);
+    font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .lista-fila {
+    display: grid;
+    grid-template-columns: 44px 1fr 110px 90px 90px 140px 95px 32px;
+    gap: 0.5rem; padding: 0.45rem 0.8rem;
+    border-bottom: 1px solid var(--crema-oscuro);
+    align-items: center; cursor: pointer; border-radius: 8px;
+    transition: background 0.15s;
+  }
+  .lista-fila:hover { background: var(--crema-oscuro); }
+  .lista-portada {
+    width: 32px; height: 46px; border-radius: 3px;
+    object-fit: cover; display: block;
+  }
+  .lista-portada-ph {
+    width: 32px; height: 46px; border-radius: 3px;
+    background: linear-gradient(135deg, var(--crema-oscuro), var(--cafe-claro));
+    display: flex; align-items: center; justify-content: center; font-size: 0.9rem;
+  }
+  .lista-titulo {
+    font-family: 'Playfair Display', serif; font-size: 0.82rem;
+    font-weight: 700; color: var(--texto); line-height: 1.25;
+    display: -webkit-box; -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .lista-autor { font-size: 0.72rem; color: var(--texto-suave); margin-top: 0.1rem; }
+  .lista-cal { font-size: 0.75rem; color: var(--amarillo); white-space: nowrap; }
+  .lista-formato { font-size: 0.68rem; color: var(--texto-suave); line-height: 1.4; }
+  .lista-generos { display: flex; flex-wrap: wrap; gap: 0.2rem; }
+  .lista-fecha { font-size: 0.68rem; color: var(--texto-suave); }
+  .lista-abrir {
+    width: 26px; height: 26px; border-radius: 50%; background: var(--crema-oscuro);
+    border: none; cursor: pointer; display: flex; align-items: center;
+    justify-content: center; color: var(--cafe); font-size: 0.75rem;
+    transition: all 0.2s; flex-shrink: 0;
+  }
+  .lista-fila:hover .lista-abrir { background: var(--cafe); color: var(--crema); }
+
   /* RESPONSIVE */
   @media (max-width: 600px) {
     header { padding: 1rem; }
@@ -952,6 +1016,7 @@
     .edicion-grid { grid-template-columns: 1fr; }
     .usuario-nombre { display: none; }
     .hl-dropdown-menu { min-width: 130px; }
+    .lista-libros { padding: 1rem; }
   }
 
   /* NUEVO HEADER */
@@ -1121,6 +1186,12 @@
         <div class="hl-dropdown-item" onclick="seleccionarOrden('autor','A→Z Autor','dd-orden')">A→Z Autor</div>
         <div class="hl-dropdown-item" onclick="seleccionarOrden('estrellas','⭐ Estrellas','dd-orden')">⭐ Estrellas</div>
       </div>
+    </div>
+
+    <!-- Toggle vista -->
+    <div class="vista-btns">
+      <button class="vista-btn activo" id="btn-vista-grid" onclick="cambiarVista('grid')" title="Vista tarjetas">⊞</button>
+      <button class="vista-btn" id="btn-vista-lista" onclick="cambiarVista('lista')" title="Vista lista">☰</button>
     </div>
   </div>
 
@@ -1619,41 +1690,131 @@ async function cargarPortada(img, placeholder, titulo, autor, portadaUrl) {
   img.src = olUrl;
 }
 
+let vistaActual = window.innerWidth <= 600 ? 'grid' : 'grid';
+
+function cambiarVista(vista) {
+  // En móvil siempre grid
+  if (window.innerWidth <= 600) vista = 'grid';
+  vistaActual = vista;
+  document.getElementById('btn-vista-grid').classList.toggle('activo', vista === 'grid');
+  document.getElementById('btn-vista-lista').classList.toggle('activo', vista === 'lista');
+  renderLibros();
+}
+
 function renderLibros() {
+  // En móvil forzar grid
+  const vista = window.innerWidth <= 600 ? 'grid' : vistaActual;
   const libros = librosFiltrados();
-  const grid = document.getElementById('grid');
-  
+  const contenedor = document.getElementById('grid');
+
   if (libros.length === 0) {
-    grid.innerHTML = `<div class="vacio" style="grid-column:1/-1"><p>📚 No encontré libros con esos filtros</p></div>`;
+    contenedor.className = 'grid-libros';
+    contenedor.innerHTML = `<div class="vacio" style="grid-column:1/-1"><p>📚 No encontré libros con esos filtros</p></div>`;
     return;
   }
-  
-  grid.innerHTML = libros.map(l => {
-    return `
-    <div class="tarjeta" onclick="abrirModal(${l.id})">
-      <div class="portada-wrap">
-        <img id="img-${l.id}" alt="${l.titulo}" style="width:100%;height:100%;object-fit:cover">
-        <div id="ph-${l.id}" class="portada-placeholder" style="display:none">
-          <span>📖</span>
-          <p>${l.titulo}</p>
-        </div>
-        ${badgeEstado(l.estado)}
-      </div>
-      <div class="tarjeta-body">
-        <div class="tarjeta-titulo">${l.titulo}</div>
-        <div class="tarjeta-autor">${l.autor}</div>
-        <div class="tarjeta-cats">${l.categorias.map(catMini).join('')}</div>
-        ${l.calificacion ? `<div class="estrellas">${renderEstrellas(l.calificacion)} <span>${l.calificacion}</span></div>` : ''}
-      </div>
-    </div>`;
-  }).join('');
 
-  // Cargar portadas después de renderizar
-  libros.forEach(l => {
-    const img = document.getElementById(`img-${l.id}`);
-    const ph = document.getElementById(`ph-${l.id}`);
-    if (img && ph) cargarPortada(img, ph, l.titulo, l.autor, l.portadaUrl);
-  });
+  if (vista === 'lista') {
+    contenedor.className = 'lista-libros';
+    contenedor.innerHTML =
+      '<div class="lista-header">' +
+        '<span></span>' +
+        '<span>Título / Autor</span>' +
+        '<span>Calificación</span>' +
+        '<span>Estado</span>' +
+        '<span>Formato</span>' +
+        '<span>Género</span>' +
+        '<span>Fecha fin</span>' +
+        '<span></span>' +
+      '</div>' +
+      libros.map(l => {
+        const estrellas = l.calificacion ? renderEstrellas(l.calificacion) + ' ' + l.calificacion : '—';
+        const formato = (l.formato || []).join(', ') || '—';
+        const generos = l.categorias.slice(0, 2).map(c => catMini(c)).join('');
+        const fecha = l.fechaFin ? formatearFecha(l.fechaFin) : (l.estado === 'Leído' ? '—' : '');
+        return '<div class="lista-fila" onclick="abrirModal(' + l.id + ')">' +
+          '<div id="lph-' + l.id + '" class="lista-portada-ph">📖</div>' +
+          '<img id="limg-' + l.id + '" class="lista-portada" style="display:none" alt="">' +
+          '<div><div class="lista-titulo">' + l.titulo + '</div><div class="lista-autor">' + l.autor + '</div></div>' +
+          '<div class="lista-cal">' + estrellas + '</div>' +
+          '<div>' + badgeEstado(l.estado) + '</div>' +
+          '<div class="lista-formato">' + formato + '</div>' +
+          '<div class="lista-generos">' + generos + '</div>' +
+          '<div class="lista-fecha">' + fecha + '</div>' +
+          '<button class="lista-abrir" onclick="event.stopPropagation();abrirModal(' + l.id + ')">›</button>' +
+        '</div>';
+      }).join('');
+
+    // Cargar portadas lista
+    libros.forEach(l => {
+      const img = document.getElementById('limg-' + l.id);
+      const ph = document.getElementById('lph-' + l.id);
+      if (img && ph) {
+        cargarPortadaLista(img, ph, l.titulo, l.autor, l.portadaUrl);
+      }
+    });
+
+  } else {
+    contenedor.className = 'grid-libros';
+    contenedor.innerHTML = libros.map(l => {
+      return `
+      <div class="tarjeta" onclick="abrirModal(${l.id})">
+        <div class="portada-wrap">
+          <img id="img-${l.id}" alt="${l.titulo}" style="width:100%;height:100%;object-fit:cover">
+          <div id="ph-${l.id}" class="portada-placeholder" style="display:none">
+            <span>📖</span>
+            <p>${l.titulo}</p>
+          </div>
+          ${badgeEstado(l.estado)}
+        </div>
+        <div class="tarjeta-body">
+          <div class="tarjeta-titulo">${l.titulo}</div>
+          <div class="tarjeta-autor">${l.autor}</div>
+          <div class="tarjeta-cats">${l.categorias.map(catMini).join('')}</div>
+          ${l.calificacion ? `<div class="estrellas">${renderEstrellas(l.calificacion)} <span>${l.calificacion}</span></div>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+
+    libros.forEach(l => {
+      const img = document.getElementById(`img-${l.id}`);
+      const ph = document.getElementById(`ph-${l.id}`);
+      if (img && ph) cargarPortada(img, ph, l.titulo, l.autor, l.portadaUrl);
+    });
+  }
+}
+
+async function cargarPortadaLista(img, ph, titulo, autor, portadaUrl) {
+  if (portadaUrl) {
+    img.src = portadaUrl;
+    img.style.display = 'block';
+    ph.style.display = 'none';
+    img.onerror = () => { img.style.display = 'none'; ph.style.display = 'flex'; };
+    return;
+  }
+  const cacheKey = titulo + autor;
+  if (portadaCache[cacheKey]) {
+    if (portadaCache[cacheKey] === 'none') return;
+    img.src = portadaCache[cacheKey];
+    img.style.display = 'block';
+    ph.style.display = 'none';
+    return;
+  }
+  const olUrl = `https://covers.openlibrary.org/b/title/${encodeURIComponent(titulo)}-S.jpg`;
+  img.onload = () => { img.style.display = 'block'; ph.style.display = 'none'; portadaCache[cacheKey] = olUrl; };
+  img.onerror = async () => {
+    try {
+      const q = encodeURIComponent(`${titulo} ${autor}`);
+      const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=1&fields=items(volumeInfo/imageLinks)`);
+      const data = await res.json();
+      const gbUrl = data?.items?.[0]?.volumeInfo?.imageLinks?.thumbnail;
+      if (gbUrl) {
+        img.src = gbUrl.replace('http://', 'https://');
+        img.style.display = 'block'; ph.style.display = 'none';
+        portadaCache[cacheKey] = img.src;
+      } else { portadaCache[cacheKey] = 'none'; }
+    } catch { portadaCache[cacheKey] = 'none'; }
+  };
+  img.src = olUrl;
 }
 
 function abrirModal(id) {
