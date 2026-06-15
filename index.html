@@ -960,7 +960,7 @@
   .lista-libros { padding: 1rem 2rem; max-width: 1400px; margin: 0 auto; }
   .lista-header {
     display: grid;
-    grid-template-columns: 44px 1.8fr 1fr 80px 70px 80px 90px 1fr 80px 32px;
+    grid-template-columns: 44px 1.4fr 0.8fr 80px 65px 65px 80px 2fr 80px 32px;
     gap: 0.5rem; padding: 0.3rem 0.8rem;
     border-bottom: 2px solid var(--cafe-claro); margin-bottom: 0.2rem;
   }
@@ -974,10 +974,10 @@
   .lista-header span.col-activa { color: var(--cafe); }
   .lista-fila {
     display: grid;
-    grid-template-columns: 44px 1.8fr 1fr 80px 70px 80px 90px 1fr 80px 32px;
+    grid-template-columns: 44px 1.4fr 0.8fr 80px 65px 65px 80px 2fr 80px 32px;
     gap: 0.5rem; padding: 0.45rem 0.8rem;
     border-bottom: 1px solid var(--crema-oscuro);
-    align-items: center; cursor: pointer; border-radius: 8px;
+    align-items: start; cursor: pointer; border-radius: 8px; padding-top: 0.55rem; padding-bottom: 0.55rem;
     transition: background 0.15s;
   }
   .lista-fila:hover { background: var(--crema-oscuro); }
@@ -999,7 +999,8 @@
   .lista-autor { font-size: 0.72rem; color: var(--texto-suave); margin-top: 0.1rem; }
   .lista-cal { font-size: 0.75rem; color: var(--amarillo); white-space: nowrap; }
   .lista-formato { font-size: 0.68rem; color: var(--texto-suave); line-height: 1.4; }
-  .lista-generos { display: flex; flex-wrap: wrap; gap: 0.2rem; }
+  .lista-generos { display: flex; flex-wrap: wrap; gap: 0.25rem; align-content: flex-start; }
+  .lista-generos .cat-mini { font-size: 0.6rem; padding: 0.15rem 0.4rem; }
   .lista-fecha { font-size: 0.68rem; color: var(--texto-suave); }
   .lista-abrir {
     width: 26px; height: 26px; border-radius: 50%; background: var(--crema-oscuro);
@@ -1871,7 +1872,7 @@ function renderLibros() {
         const estrellas = l.calificacion ? renderEstrellas(l.calificacion) + ' ' + l.calificacion : '—';
         const calPublico = l.calificacionPublico ? l.calificacionPublico : '—';
         const formato = (l.formato || []).join(', ') || '—';
-        const generos = l.categorias.slice(0, 2).map(c => catMini(c)).join('');
+        const generos = (l.categorias || []).map(c => catMini(c)).join('');
         const fecha = l.fechaFin ? formatearFecha(l.fechaFin) : '';
         return '<div class="lista-fila" onclick="abrirModal(' + l.id + ')">' +
           '<div id="lph-' + l.id + '" class="lista-portada-ph">📖</div>' +
