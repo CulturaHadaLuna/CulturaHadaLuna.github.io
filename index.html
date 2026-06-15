@@ -960,7 +960,7 @@
   .lista-libros { padding: 1rem 2rem; max-width: 1400px; margin: 0 auto; }
   .lista-header {
     display: grid;
-    grid-template-columns: 44px 1.8fr 1fr 100px 80px 100px 1.2fr 90px 32px;
+    grid-template-columns: 44px 1.8fr 1fr 80px 70px 80px 90px 1fr 80px 32px;
     gap: 0.5rem; padding: 0.3rem 0.8rem;
     border-bottom: 2px solid var(--cafe-claro); margin-bottom: 0.2rem;
   }
@@ -974,7 +974,7 @@
   .lista-header span.col-activa { color: var(--cafe); }
   .lista-fila {
     display: grid;
-    grid-template-columns: 44px 1.8fr 1fr 100px 80px 100px 1.2fr 90px 32px;
+    grid-template-columns: 44px 1.8fr 1fr 80px 70px 80px 90px 1fr 80px 32px;
     gap: 0.5rem; padding: 0.45rem 0.8rem;
     border-bottom: 1px solid var(--crema-oscuro);
     align-items: center; cursor: pointer; border-radius: 8px;
@@ -1777,6 +1777,14 @@ function aplicarOrdenColumna(libros) {
       if (vb === -1) return -1;
       return dir === 'desc' ? vb - va : va - vb;
     }
+    if (campo === 'calificacionPublico') {
+      va = a.calificacionPublico || -1;
+      vb = b.calificacionPublico || -1;
+      if (va === -1 && vb === -1) return 0;
+      if (va === -1) return 1;
+      if (vb === -1) return -1;
+      return dir === 'desc' ? vb - va : va - vb;
+    }
     if (campo === 'autor') {
       va = a.autor || '';
       vb = b.autor || '';
@@ -1849,7 +1857,8 @@ function renderLibros() {
         '<span></span>' +
         '<span>Título</span>' +
         '<span class="' + claseActiva('autor') + '" onclick="ordenarPorColumna(\'autor\')">Autor' + indicador('autor') + '</span>' +
-        '<span class="' + claseActiva('calificacion') + '" onclick="ordenarPorColumna(\'calificacion\')">Calificación' + indicador('calificacion') + '</span>' +
+        '<span class="' + claseActiva('calificacion') + '" onclick="ordenarPorColumna(\'calificacion\')">Mi ★' + indicador('calificacion') + '</span>' +
+        '<span class="' + claseActiva('calificacionPublico') + '" onclick="ordenarPorColumna(\'calificacionPublico\')">GR ★' + indicador('calificacionPublico') + '</span>' +
         '<span class="' + claseActiva('estado') + '" onclick="ordenarPorColumna(\'estado\')">Estado' + indicador('estado') + '</span>' +
         '<span class="' + claseActiva('formato') + '" onclick="ordenarPorColumna(\'formato\')">Formato' + indicador('formato') + '</span>' +
         '<span>Género</span>' +
@@ -1858,6 +1867,7 @@ function renderLibros() {
       '</div>' +
       librosOrdenados.map(l => {
         const estrellas = l.calificacion ? renderEstrellas(l.calificacion) + ' ' + l.calificacion : '—';
+        const calPublico = l.calificacionPublico ? l.calificacionPublico : '—';
         const formato = (l.formato || []).join(', ') || '—';
         const generos = l.categorias.slice(0, 2).map(c => catMini(c)).join('');
         const fecha = l.fechaFin ? formatearFecha(l.fechaFin) : '';
@@ -1867,6 +1877,7 @@ function renderLibros() {
           '<div class="lista-titulo">' + l.titulo + '</div>' +
           '<div class="lista-autor">' + l.autor + '</div>' +
           '<div class="lista-cal">' + estrellas + '</div>' +
+          '<div class="lista-cal" style="color:var(--texto-suave);font-size:0.72rem">' + calPublico + '</div>' +
           '<div>' + badgeEstado(l.estado) + '</div>' +
           '<div class="lista-formato">' + formato + '</div>' +
           '<div class="lista-generos">' + generos + '</div>' +
@@ -1972,6 +1983,7 @@ function abrirModal(id) {
           </span>
         </div>` : ''}
         ${l.calificacion ? `<div class="modal-estrellas">${renderEstrellas(l.calificacion)} ${l.calificacion}/5</div>` : ''}
+        ${l.calificacionPublico ? `<div style="font-size:0.7rem;color:var(--cafe-claro);margin-top:0.2rem">👥 Goodreads: ${l.calificacionPublico}/5</div>` : ''}
         ${l.categorias && l.categorias.length > 0 ? `<div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-top:0.4rem">${l.categorias.map(catMini).join('')}</div>` : ''}
       </div>
       <button class="modal-close" onclick="cerrarModal()">✕</button>
