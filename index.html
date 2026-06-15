@@ -1516,9 +1516,10 @@ function init() {
 }
 
 function actualizarStats() {
-  const leidos = LIBROS.filter(l => l.estado === 'Leído').length;
-  const leyendo = LIBROS.filter(l => l.estado === 'Leyendo').length;
-  const pendientes = LIBROS.filter(l => l.estado === 'Quiero leer').length;
+  const filtrados = librosFiltrados();
+  const leidos = filtrados.filter(l => l.estado === 'Leído').length;
+  const leyendo = filtrados.filter(l => l.estado === 'Leyendo').length;
+  const pendientes = filtrados.filter(l => l.estado === 'Quiero leer').length;
   document.getElementById('total-leyendo').textContent = leyendo;
   document.getElementById('total-leidos').textContent = leidos;
   document.getElementById('total-pendientes').textContent = pendientes;
@@ -1842,6 +1843,7 @@ function renderLibros() {
   const vista = window.innerWidth <= 600 ? 'grid' : vistaActual;
   const libros = librosFiltrados();
   const contenedor = document.getElementById('grid');
+  actualizarStats();
 
   if (libros.length === 0) {
     contenedor.className = 'grid-libros';
@@ -2248,6 +2250,11 @@ function panelEdicion(l) {
     '<div class="estrellas-editor"><label>Calificación</label>' + starsHtml +
     '<span class="calificacion-valor" id="cal-val-' + lid + '">' + (cal ? cal + '/5' : 'Sin calificar') + '</span></div>' +
 
+    // 2b. Calificación pública
+    '<div class="edicion-grid" style="grid-template-columns:1fr"><div class="edicion-campo">' +
+    '<label>👥 Calificación Goodreads (promedio lectores)</label>' +
+    '<input type="number" id="edit-calpub-' + lid + '" value="' + (l.calificacionPublico || '') + '" placeholder="ej. 4.35" min="0" max="5" step="0.01" style="width:120px"></div></div>' +
+
     // 3. Fechas
     '<div class="edicion-grid">' +
     '<div class="edicion-campo"><label>Fecha inicio</label>' +
@@ -2502,6 +2509,7 @@ async function guardarLibro(id) {
   const analisisEl = document.getElementById(`edit-analisis-${id}`);
   const frasesEl = document.getElementById(`edit-frases-${id}`);
   const loTengoEl = document.getElementById(`edit-lotengo-${id}`);
+  const calPubEl = document.getElementById(`edit-calpub-${id}`);
 
   if (estadoEl) l.estado = estadoEl.value;
   if (paginasEl) l.paginas = paginasEl.value ? parseInt(paginasEl.value) : null;
@@ -2510,6 +2518,8 @@ async function guardarLibro(id) {
   if (analisisEl) l.analisis = analisisEl.value;
   if (frasesEl) l.frases = frasesEl.value;
   if (loTengoEl) l.loTengo = loTengoEl.checked;
+  if (calPubEl && calPubEl.value) l.calificacionPublico = parseFloat(calPubEl.value);
+  else if (calPubEl && calPubEl.value === '') l.calificacionPublico = null;
   if (calificacionEditando !== null) l.calificacion = calificacionEditando;
 
   // Categorías seleccionadas
