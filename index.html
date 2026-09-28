@@ -1532,6 +1532,8 @@ function renderCategorias() {
   const todas = new Set();
   LIBROS.forEach(l => l.categorias.forEach(c => todas.add(c)));
   todas.add('Lo amé'); // siempre visible aunque no haya libros con esa categoría
+  todas.add('Política');
+  todas.add('Salud');
   const todasArr = Array.from(todas);
   const resto = todasArr.filter(c => c !== 'Lo amé').sort();
   const cats = ['Todas', 'Lo amé', ...resto, 'sin-genero'];
@@ -2283,7 +2285,7 @@ function panelEdicion(l) {
     '<div class="edicion-full"><label>Géneros / Categorías</label>' +
     '<div class="formato-chips" style="flex-wrap:wrap">' +
     (() => {
-      const todasCats = ['Lo amé','Biography','Cozy & Contemplative','Colombia','Distopia','Fantasy','Fiction','Growing','Historical Fiction','Humor','LGBTQ+','Libros sobre libros','Mitología','NoFiction','Novela','Romance','Sci-Fi','Thriller','Woman Power'];
+      const todasCats = ['Lo amé','Biography','Cozy & Contemplative','Colombia','Distopia','Fantasy','Fiction','Growing','Historical Fiction','Humor','LGBTQ+','Libros sobre libros','Mitología','NoFiction','Novela','Política','Romance','Salud','Sci-Fi','Thriller','Woman Power'];
       return todasCats.map(cat => {
         const sel = (l.categorias || []).includes(cat);
         const col = CATEGORIAS_COLORES[cat] || {bg:'#E8B84B22', color:'#5C3D2E', border:'#E8B84B'};
@@ -2526,7 +2528,7 @@ async function guardarLibro(id) {
   if (calificacionEditando !== null) l.calificacion = calificacionEditando;
 
   // Categorías seleccionadas
-  const todasCats = ['Lo amé','Biography','Cozy & Contemplative','Colombia','Distopia','Fantasy','Fiction','Growing','Historical Fiction','Humor','LGBTQ+','Libros sobre libros','Mitología','NoFiction','Novela','Romance','Sci-Fi','Thriller','Woman Power'];
+  const todasCats = ['Lo amé','Biography','Cozy & Contemplative','Colombia','Distopia','Fantasy','Fiction','Growing','Historical Fiction','Humor','LGBTQ+','Libros sobre libros','Mitología','NoFiction','Novela','Política','Romance','Salud','Sci-Fi','Thriller','Woman Power'];
   const catsSeleccionadas = todasCats.filter(cat => {
     const chipId = 'catchip-' + id + '-' + cat.replace(/[^a-zA-Z0-9]/g,'_');
     const chip = document.getElementById(chipId);
