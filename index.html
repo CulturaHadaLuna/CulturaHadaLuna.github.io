@@ -1302,6 +1302,18 @@
             </div>
           </div>
         </div>
+        <!-- Editorial -->
+        <div style="margin-bottom:0.8rem">
+          <label style="font-size:0.68rem;color:var(--texto-suave);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:0.3rem">Editorial</label>
+          <input type="text" id="nuevo-editorial" placeholder="ej. Planeta" style="width:100%;padding:0.4rem 0.6rem;border:1.5px solid var(--cafe-claro);border-radius:8px;font-family:'Inter',sans-serif;font-size:0.8rem;outline:none;background:white;color:var(--texto)">
+        </div>
+
+        <!-- Categorías -->
+        <div class="edicion-full" style="margin-bottom:0.8rem">
+          <label style="font-size:0.68rem;color:var(--texto-suave);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:0.4rem">Géneros / Categorías</label>
+          <div class="formato-chips" style="flex-wrap:wrap" id="cats-nuevo-wrap"></div>
+        </div>
+
         <div style="display:flex;gap:0.6rem;">
           <button onclick="cerrarModalAgregar()" style="flex:1;padding:0.7rem;background:transparent;color:var(--texto-suave);border:1.5px solid var(--cafe-claro);border-radius:10px;font-family:'Inter',sans-serif;font-size:0.85rem;cursor:pointer;">
             Cancelar
@@ -1882,7 +1894,7 @@ function renderLibros() {
         '<span></span>' +
       '</div>' +
       librosOrdenados.map(l => {
-        const estrellas = l.calificacion ? renderEstrellas(l.calificacion) + ' ' + l.calificacion : '—';
+        const estrellas = (l.calificacion && l.estado !== 'Quiero leer') ? renderEstrellas(l.calificacion) + ' ' + l.calificacion : '—';
         const calPublico = l.calificacionPublico ? l.calificacionPublico : '—';
         const formato = (l.formato || []).join(', ') || '—';
         const generos = (l.categorias || []).map(c => catMini(c)).join('');
@@ -1929,7 +1941,7 @@ function renderLibros() {
           <div class="tarjeta-autor">${l.autor}</div>
           ${(l.paginas || l.anio) ? `<div class="tarjeta-meta">${l.paginas ? l.paginas + ' pág' : ''}${l.paginas && l.anio ? ' · ' : ''}${l.anio ? l.anio : ''}</div>` : ''}
           <div class="tarjeta-cats">${l.categorias.map(catMini).join('')}</div>
-          ${l.calificacion ? `<div class="estrellas">${renderEstrellas(l.calificacion)} <span>${l.calificacion}</span></div>` : ''}
+          ${(l.calificacion && l.estado !== 'Quiero leer') ? `<div class="estrellas">${renderEstrellas(l.calificacion)} <span>${l.calificacion}</span></div>` : ''}
         </div>
       </div>`;
     }).join('');
@@ -1999,7 +2011,7 @@ function abrirModal(id) {
             📅 ${[l.fechaInicio ? formatearFecha(l.fechaInicio) : null, l.fechaFin ? formatearFecha(l.fechaFin) : null].filter(Boolean).join(' → ')}
           </span>
         </div>` : ''}
-        ${l.calificacion ? `<div class="modal-estrellas">${renderEstrellas(l.calificacion)} ${l.calificacion}/5</div>` : ''}
+        ${(l.calificacion && l.estado !== 'Quiero leer') ? `<div class="modal-estrellas">${renderEstrellas(l.calificacion)} ${l.calificacion}/5</div>` : ''}
         ${l.calificacionPublico ? `<div style="font-size:0.7rem;color:var(--cafe-claro);margin-top:0.2rem">👥 Goodreads: ${l.calificacionPublico}/5</div>` : ''}
         ${l.categorias && l.categorias.length > 0 ? `<div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-top:0.4rem">${l.categorias.map(catMini).join('')}</div>` : ''}
       </div>
@@ -2286,6 +2298,12 @@ function panelEdicion(l) {
     '<div class="edicion-full" id="wrap-formato-' + lid + '"' + (loTengo ? '' : ' style="display:none"') + '>' +
     '<label>Formato</label><div class="formato-chips">' + chipsHtml + '</div></div>' +
 
+    // 4b. Autor + Editorial
+    '<div class="edicion-grid" style="grid-template-columns:1fr 1fr"><div class="edicion-campo"><label>Autor</label>' +
+    '<input type="text" id="edit-autor-' + lid + '" value="' + (l.autor || '').replace(/"/g, '&quot;') + '" placeholder="Nombre del autor"></div>' +
+    '<div class="edicion-campo"><label>Editorial</label>' +
+    '<input type="text" id="edit-editorial-' + lid + '" value="' + (l.editorial || '').replace(/"/g, '&quot;') + '" placeholder="ej. Planeta"></div></div>' +
+
     // 5. Páginas
     '<div class="edicion-grid" style="grid-template-columns:1fr 1fr"><div class="edicion-campo">' +
     '<label>Páginas</label>' +
@@ -2520,6 +2538,10 @@ async function guardarLibro(id) {
 
   // Recoger valores del formulario
   const estadoEl = document.getElementById(`edit-estado-${id}`);
+  const autorEl = document.getElementById(`edit-autor-${id}`);
+  if (autorEl && autorEl.value.trim()) l.autor = autorEl.value.trim();
+  const editorialEl = document.getElementById(`edit-editorial-${id}`);
+  if (editorialEl) l.editorial = editorialEl.value.trim() || null;
   const paginasEl = document.getElementById(`edit-paginas-${id}`);
   const inicioEl = document.getElementById(`edit-inicio-${id}`);
   const finEl = document.getElementById(`edit-fin-${id}`);
@@ -2639,6 +2661,25 @@ function cerrarModalAgregar(e) {
   }
 }
 
+function renderCatsNuevo() {
+  const wrap = document.getElementById('cats-nuevo-wrap');
+  if (!wrap) return;
+  const todasCats = ['Lo amé','Biography','Cozy & Contemplative','Colombia','Distopia','Fantasy','Fiction','Growing','Historical Fiction','Humor','LGBTQ+','Libros sobre libros','Mitología','NoFiction','Novela','Política','Romance','Saberes','Salud','Sci-Fi','Thriller','Woman Power'];
+  wrap.innerHTML = todasCats.map(cat => {
+    const col = CATEGORIAS_COLORES[cat] || {bg:'#FAEEDA', color:'#633806', border:'#EF9F27'};
+    const chipId = 'catnuevo-' + cat.replace(/[^a-zA-Z0-9]/g,'_');
+    return `<label class="formato-chip" id="${chipId}" style="background:${col.bg};color:${col.color};border-color:${col.border}" onclick="toggleCatNuevo('${cat}', this)"><input type="checkbox" value="${cat}">${cat}</label>`;
+  }).join('');
+}
+
+function toggleCatNuevo(cat, chip) {
+  const input = chip.querySelector('input');
+  const col = CATEGORIAS_COLORES[cat] || {bg:'#FAEEDA', color:'#633806', border:'#EF9F27'};
+  const checked = input.checked;
+  chip.style.background = checked ? col.border : col.bg;
+  chip.style.color = checked ? 'white' : col.color;
+}
+
 function toggleFormatoNuevo(formato, checked) {
   const chip = document.getElementById('chip-nuevo-' + formato);
   if (chip) chip.classList.toggle('seleccionado', checked);
@@ -2733,6 +2774,7 @@ function mostrarPreviewLibro(titulo, autor, paginas, portadaUrl) {
   document.getElementById('btn-cancelar-wrap').style.display = 'block';
   generarResenaConClaude(titulo, autor);
   document.getElementById('campos-extra').style.display = 'block';
+  renderCatsNuevo();
 }
 
 function mostrarFormularioManual() {
@@ -2886,6 +2928,7 @@ async function seleccionarLibroResultado(r) {
 
   await generarResenaConClaude(r.titulo, r.autor);
   document.getElementById('campos-extra').style.display = 'block';
+  renderCatsNuevo();
 }
 
 async function seleccionarLibro(doc) {
@@ -2917,6 +2960,7 @@ async function seleccionarLibro(doc) {
   // Generar reseña con Claude
   await generarResenaConClaude(titulo, autor);
   document.getElementById('campos-extra').style.display = 'block';
+  renderCatsNuevo();
 }
 
 async function generarResenaConClaude(titulo, autor) {
@@ -2943,9 +2987,16 @@ async function agregarLibroFinal() {
     formato: formatosNuevos.length > 0 ? formatosNuevos : ['EPUB'],
     calificacion: null,
     fechaInicio: '', fechaFin: '',
-    categorias: [],
+    categorias: (() => {
+      const todasCats = ['Lo amé','Biography','Cozy & Contemplative','Colombia','Distopia','Fantasy','Fiction','Growing','Historical Fiction','Humor','LGBTQ+','Libros sobre libros','Mitología','NoFiction','Novela','Política','Romance','Saberes','Salud','Sci-Fi','Thriller','Woman Power'];
+      return todasCats.filter(cat => {
+        const chip = document.getElementById('catnuevo-' + cat.replace(/[^a-zA-Z0-9]/g,'_'));
+        return chip && chip.querySelector('input')?.checked;
+      });
+    })(),
     resena: document.getElementById('texto-resena-nueva').value,
     diferencial: document.getElementById('texto-diferencial-nuevo').value,
+    editorial: document.getElementById('nuevo-editorial')?.value.trim() || null,
     analisis: '', frases: '',
     portadaUrl: libroNuevoTemp.portadaUrl || '',
     loTengo: formatosNuevos.length > 0
