@@ -1356,6 +1356,7 @@ const CATEGORIAS_COLORES = {
   'Biography':           {bg:'#FAECE7', color:'#4A1B0C', border:'#993C1D'},
   'LGBTQ+':              {bg:'#FCEBEB', color:'#791F1F', border:'#E24B4A'},
   'Lo amé':              {bg:'#FAC775', color:'#633806', border:'#EF9F27'},
+  'Poesía':              {bg:'#F5E6F8', color:'#6B2D80', border:'#A855C8'},
   'Política':            {bg:'#E1F5EE', color:'#085041', border:'#1D9E75'},
   'Salud':               {bg:'#EEEDFE', color:'#3C3489', border:'#534AB7'},
   'Saberes':             {bg:'#E1F5EE', color:'#085041', border:'#5DCAA5'},
@@ -1552,6 +1553,7 @@ function renderCategorias() {
   const todas = new Set();
   LIBROS.forEach(l => l.categorias.forEach(c => todas.add(c)));
   todas.add('Lo amé'); // siempre visible aunque no haya libros con esa categoría
+  todas.add('Poesía');
   todas.add('Política');
   todas.add('Saberes');
   todas.add('Salud');
@@ -2315,7 +2317,7 @@ function panelEdicion(l) {
     '<div class="edicion-full"><label>Géneros / Categorías</label>' +
     '<div class="formato-chips" style="flex-wrap:wrap">' +
     (() => {
-      const todasCats = ['Lo amé','Biography','Cozy & Contemplative','Colombia','Distopia','Fantasy','Fiction','Growing','Historical Fiction','Humor','LGBTQ+','Libros sobre libros','Mitología','NoFiction','Novela','Política','Romance','Saberes','Salud','Sci-Fi','Thriller','Woman Power'];
+      const todasCats = ['Lo amé','Biography','Cozy & Contemplative','Colombia','Distopia','Fantasy','Fiction','Growing','Historical Fiction','Humor','LGBTQ+','Libros sobre libros','Mitología','NoFiction','Novela','Poesía','Política','Romance','Saberes','Salud','Sci-Fi','Thriller','Woman Power'];
       return todasCats.map(cat => {
         const sel = (l.categorias || []).includes(cat);
         const col = CATEGORIAS_COLORES[cat] || {bg:'#E8B84B22', color:'#5C3D2E', border:'#E8B84B'};
@@ -2564,7 +2566,7 @@ async function guardarLibro(id) {
   if (calificacionEditando !== null) l.calificacion = calificacionEditando;
 
   // Categorías seleccionadas
-  const todasCats = ['Lo amé','Biography','Cozy & Contemplative','Colombia','Distopia','Fantasy','Fiction','Growing','Historical Fiction','Humor','LGBTQ+','Libros sobre libros','Mitología','NoFiction','Novela','Política','Romance','Saberes','Salud','Sci-Fi','Thriller','Woman Power'];
+  const todasCats = ['Lo amé','Biography','Cozy & Contemplative','Colombia','Distopia','Fantasy','Fiction','Growing','Historical Fiction','Humor','LGBTQ+','Libros sobre libros','Mitología','NoFiction','Novela','Poesía','Política','Romance','Saberes','Salud','Sci-Fi','Thriller','Woman Power'];
   const catsSeleccionadas = todasCats.filter(cat => {
     const chipId = 'catchip-' + id + '-' + cat.replace(/[^a-zA-Z0-9]/g,'_');
     const chip = document.getElementById(chipId);
@@ -2664,7 +2666,7 @@ function cerrarModalAgregar(e) {
 function renderCatsNuevo() {
   const wrap = document.getElementById('cats-nuevo-wrap');
   if (!wrap) return;
-  const todasCats = ['Lo amé','Biography','Cozy & Contemplative','Colombia','Distopia','Fantasy','Fiction','Growing','Historical Fiction','Humor','LGBTQ+','Libros sobre libros','Mitología','NoFiction','Novela','Política','Romance','Saberes','Salud','Sci-Fi','Thriller','Woman Power'];
+  const todasCats = ['Lo amé','Biography','Cozy & Contemplative','Colombia','Distopia','Fantasy','Fiction','Growing','Historical Fiction','Humor','LGBTQ+','Libros sobre libros','Mitología','NoFiction','Novela','Poesía','Política','Romance','Saberes','Salud','Sci-Fi','Thriller','Woman Power'];
   wrap.innerHTML = todasCats.map(cat => {
     const col = CATEGORIAS_COLORES[cat] || {bg:'#FAEEDA', color:'#633806', border:'#EF9F27'};
     const chipId = 'catnuevo-' + cat.replace(/[^a-zA-Z0-9]/g,'_');
@@ -2988,7 +2990,7 @@ async function agregarLibroFinal() {
     calificacion: null,
     fechaInicio: '', fechaFin: '',
     categorias: (() => {
-      const todasCats = ['Lo amé','Biography','Cozy & Contemplative','Colombia','Distopia','Fantasy','Fiction','Growing','Historical Fiction','Humor','LGBTQ+','Libros sobre libros','Mitología','NoFiction','Novela','Política','Romance','Saberes','Salud','Sci-Fi','Thriller','Woman Power'];
+      const todasCats = ['Lo amé','Biography','Cozy & Contemplative','Colombia','Distopia','Fantasy','Fiction','Growing','Historical Fiction','Humor','LGBTQ+','Libros sobre libros','Mitología','NoFiction','Novela','Poesía','Política','Romance','Saberes','Salud','Sci-Fi','Thriller','Woman Power'];
       return todasCats.filter(cat => {
         const chip = document.getElementById('catnuevo-' + cat.replace(/[^a-zA-Z0-9]/g,'_'));
         return chip && chip.querySelector('input')?.checked;
