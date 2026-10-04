@@ -303,7 +303,14 @@
   .tarjeta-autor {
     font-size: 0.75rem;
     color: var(--texto-suave);
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.2rem;
+  }
+
+  .tarjeta-meta {
+    font-size: 0.68rem;
+    color: var(--cafe-claro);
+    margin-bottom: 0.4rem;
+    font-style: italic;
   }
 
   .tarjeta-cats {
@@ -1920,6 +1927,7 @@ function renderLibros() {
         <div class="tarjeta-body">
           <div class="tarjeta-titulo">${l.titulo}</div>
           <div class="tarjeta-autor">${l.autor}</div>
+          ${(l.paginas || l.anio) ? `<div class="tarjeta-meta">${l.paginas ? l.paginas + ' pág' : ''}${l.paginas && l.anio ? ' · ' : ''}${l.anio ? l.anio : ''}</div>` : ''}
           <div class="tarjeta-cats">${l.categorias.map(catMini).join('')}</div>
           ${l.calificacion ? `<div class="estrellas">${renderEstrellas(l.calificacion)} <span>${l.calificacion}</span></div>` : ''}
         </div>
@@ -2279,9 +2287,11 @@ function panelEdicion(l) {
     '<label>Formato</label><div class="formato-chips">' + chipsHtml + '</div></div>' +
 
     // 5. Páginas
-    '<div class="edicion-grid" style="grid-template-columns:1fr"><div class="edicion-campo">' +
+    '<div class="edicion-grid" style="grid-template-columns:1fr 1fr"><div class="edicion-campo">' +
     '<label>Páginas</label>' +
-    '<input type="number" id="edit-paginas-' + lid + '" value="' + (l.paginas || '') + '" placeholder="—"></div></div>' +
+    '<input type="number" id="edit-paginas-' + lid + '" value="' + (l.paginas || '') + '" placeholder="—"></div>' +
+    '<div class="edicion-campo"><label>Año de publicación</label>' +
+    '<input type="number" id="edit-anio-' + lid + '" value="' + (l.anio || '') + '" placeholder="ej. 2023"></div></div>' +
 
     // 5b. Categorías
     '<div class="edicion-full"><label>Géneros / Categorías</label>' +
@@ -2513,6 +2523,8 @@ async function guardarLibro(id) {
   const paginasEl = document.getElementById(`edit-paginas-${id}`);
   const inicioEl = document.getElementById(`edit-inicio-${id}`);
   const finEl = document.getElementById(`edit-fin-${id}`);
+  const anioEl = document.getElementById(`edit-anio-${id}`);
+  if (anioEl) l.anio = anioEl.value ? parseInt(anioEl.value) : null;
   const analisisEl = document.getElementById(`edit-analisis-${id}`);
   const frasesEl = document.getElementById(`edit-frases-${id}`);
   const loTengoEl = document.getElementById(`edit-lotengo-${id}`);
